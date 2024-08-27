@@ -2,8 +2,11 @@ import { Link } from 'react-router-dom';
 import './UserPost.scss';
 import { Avatar, Box, Flex, Image, Text } from '@chakra-ui/react';
 import { BsThreeDots } from 'react-icons/bs';
+import ActionsPost from '../ActionsPost/ActionsPost';
+import { useState } from 'react';
 
-const UserPost = () => {
+const UserPost = ({ likes, replies, postImg, postTitle }) => {
+    const [liked, setLiked] = useState(false);
     return (
         <>
             <Link to="/markzuckebug/post/1">
@@ -56,12 +59,25 @@ const UserPost = () => {
                                 <BsThreeDots />
                             </Flex>
                         </Flex>
-                        <Text fontSize={'sm'}>
-                            “Mấy anh chị lương 20-30tr/th cho em hỏi, anh chị làm gì để đạt mức lương đó vậy a?"🤔
-                        </Text>
-                        <Box borderRadius={6} overflow={'hidden'} border={'1px solid'} borderColor={'gray.light'}>
-                            <Image src="/post1.png" w={'full'} />
-                        </Box>
+                        <Text fontSize={'sm'}>{postTitle}</Text>
+                        {postImg && (
+                            <Box borderRadius={6} overflow={'hidden'} border={'1px solid'} borderColor={'gray.light'}>
+                                <Image src={postImg} w={'full'} />
+                            </Box>
+                        )}
+                        <Flex gap={3} my={1} alignItems={'center'}>
+                            <ActionsPost likes={likes} replies={replies} liked={liked} setLiked={setLiked} />
+                        </Flex>
+                        <Flex gap={2} alignItems={'center'}>
+                            <Text color={'gray.light'} fontSize={'sm'}>
+                                {likes} likes
+                            </Text>
+
+                            <Box w={0.5} h={0.5} borderRadius={'full'} bg={'gray.light'}></Box>
+                            <Text color={'gray.light'} fontSize={'sm'}>
+                                {replies} replies
+                            </Text>
+                        </Flex>
                     </Flex>
                 </Flex>
             </Link>

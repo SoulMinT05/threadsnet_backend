@@ -2,7 +2,7 @@
 import { Col, Row } from 'antd';
 import { Route, Routes } from 'react-router-dom';
 import UserPage from './pages/UserPage';
-import PostPage from './pages/PostPage';
+import PostPage from './pages/PostPage/PostPage';
 import Header from './components/Header';
 import { Container } from '@chakra-ui/react';
 

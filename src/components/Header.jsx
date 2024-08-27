@@ -1,7 +1,6 @@
 import { Flex, Image, useColorMode } from '@chakra-ui/react';
-import { Dropdown } from 'antd';
-import { Col, Row } from 'antd';
-// import { Col } from 'antd';
+// import { Dropdown } from 'antd';
+// import { Col, Row } from 'antd';
 
 const Header = () => {
     const { colorMode, toggleColorMode } = useColorMode();
