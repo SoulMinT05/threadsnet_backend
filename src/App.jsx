@@ -1,9 +1,29 @@
-import { Button } from '@chakra-ui/react';
+// import { Button } from '@chakra-ui/react';
+import { Col, Row } from 'antd';
+import { Route, Routes } from 'react-router-dom';
+import UserPage from './pages/UserPage';
+import PostPage from './pages/PostPage';
+import Header from './components/Header';
+import { Container } from '@chakra-ui/react';
 
 function App() {
     return (
         <>
-            <Button>Hello</Button>
+            <h1>Heelo</h1>
+            <h1>Hello</h1>
+            <Container maxW="620px">
+                <Header />
+                {/* <Row> */}
+                {/* <Header /> */}
+                {/* <Col span={6}>col-6</Col> */}
+                {/* <Col span={18}> */}
+                <Routes>
+                    <Route path="/:username" element={<UserPage />} />
+                    <Route path="/:username/post/:postId" element={<PostPage />} />
+                </Routes>
+                {/* </Col> */}
+                {/* </Row> */}
+            </Container>
         </>
     );
 }
