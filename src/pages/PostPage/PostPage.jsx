@@ -3,7 +3,8 @@ import './PostPage.scss';
 import { BsThreeDots } from 'react-icons/bs';
 import ActionsPost from '../../components/ActionsPost/ActionsPost';
 import { useState } from 'react';
-const PostPage = ({ likes, replies, postImg, postTitle }) => {
+import Comment from '../../components/Comment/Comment';
+const PostPage = () => {
     const [liked, setLiked] = useState(false);
     return (
         <>
@@ -49,6 +50,27 @@ const PostPage = ({ likes, replies, postImg, postTitle }) => {
                 <Button>Get</Button>
             </Flex>
             <Divider my={4} />
+            <Comment
+                comment="Looks good"
+                createdAt="14d"
+                likes={150}
+                username="jack"
+                userAvatar="https://bit.ly/code-beast"
+            />
+            <Comment
+                comment="Looks bad"
+                createdAt="3d"
+                likes={300}
+                username="jsol"
+                userAvatar="https://bit.ly/prosper-baba"
+            />
+            <Comment
+                comment="Have good day"
+                createdAt="5d"
+                likes={120}
+                username="erik"
+                userAvatar="https://bit.ly/ryan-florence"
+            />
         </>
     );
 };
