@@ -57,7 +57,18 @@ const login = asyncHandler(async (req, res, next) => {
     }
 });
 
+const getDetailUser = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    console.log('req.user: ', req.user);
+    const user = await User.findById(_id);
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Get detail user failed',
+    });
+});
+
 module.exports = {
     register,
     login,
+    getDetailUser,
 };
