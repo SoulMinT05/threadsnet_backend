@@ -65,6 +65,19 @@ const getDetailUser = asyncHandler(async (req, res) => {
     });
 });
 
+const refreshCreateNewAccessToken = asyncHandler(async (req, res) => {
+    const cookie = req.cookies;
+    if (!cookie && !cookie.refreshToken) throw new Error('No refresh token in cookies');
+
+    // If isCheckRefreshToken error => it stops and returns immediately
+    const isCheckRefreshToken = await jwt.verify(cookie.refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET);
+    const user = await User.findOne({ _id: isCheckRefreshToken._id, refreshToken: cookie.refreshToken });
+    return res.status(200).json({
+        success: user ? true : false,
+        newAccessToken: user ? generateAccessToken(user._id, user.isAdmin, user.role) : 'Refresh token not matched',
+    });
+});
+
 const logout = asyncHandler(async (req, res) => {
     const cookie = req.cookies;
     if (!cookie || !cookie.refreshToken) throw new Error('Not found refresh token in cookies');
@@ -91,5 +104,6 @@ module.exports = {
     register,
     login,
     getDetailUser,
+    refreshCreateNewAccessToken,
     logout,
 };
