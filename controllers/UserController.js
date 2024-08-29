@@ -100,10 +100,66 @@ const logout = asyncHandler(async (req, res) => {
     });
 });
 
+const followUser = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const userToModify = await User.findById(id);
+    const currentUser = await User.findById(req.user._id);
+
+    if (id === req.user._id) throw new Error('You cannot follow/unfollow this user');
+    if (!userToModify || !currentUser) throw new Error('User not found');
+    const isFollowing = currentUser.following.includes(id);
+    if (isFollowing) {
+        // Unfollow
+        // Modify currentUser following, modify followers of userToModify
+        const responseFollowing = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $pull: { following: id },
+            },
+            { new: true },
+        );
+        const responseFollower = await User.findByIdAndUpdate(
+            id,
+            {
+                $pull: { followers: req.user._id },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: responseFollowing && responseFollower ? true : false,
+            message: 'Follow user',
+            responseFollowing,
+            responseFollower,
+        });
+    } else {
+        const responseFollowing = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $push: { following: id },
+            },
+            { new: true },
+        );
+        const responseFollower = await User.findByIdAndUpdate(
+            id,
+            {
+                $push: { followers: req.user._id },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: responseFollowing && responseFollower ? true : false,
+            message: 'Unfollow user',
+            responseFollowing,
+            responseFollower,
+        });
+    }
+});
+
 module.exports = {
     register,
     login,
     getDetailUser,
     refreshCreateNewAccessToken,
     logout,
+    followUser,
 };

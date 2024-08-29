@@ -7,5 +7,6 @@ router.post('/login', UserController.login);
 router.get('/getDetailUser', verifyAccessToken, UserController.getDetailUser);
 router.post('/refreshCreateNewAccessToken', UserController.refreshCreateNewAccessToken);
 router.get('/logout', UserController.logout);
+router.put('/follow/:id', verifyAccessToken, UserController.followUser);
 
 module.exports = router;
