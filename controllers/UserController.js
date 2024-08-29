@@ -1,5 +1,6 @@
 const User = require('../models/UserModel');
 const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcrypt');
 
 const { generateAccessToken, generateRefreshToken } = require('../middlewares/jwtMiddleware');
 
@@ -190,6 +191,10 @@ const updateInfoFromUser = asyncHandler(async (req, res) => {
 const updateInfoFromAdmin = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     if (Object.keys(req.body).length === 0) throw new Error('You need to type at least one field to update ');
+    if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        req.body.password = await bcrypt.hash(req.body.password, salt);
+    }
     const user = await User.findByIdAndUpdate(userId, req.body, { new: true }).select(
         '-password -isAdmin -role -refreshToken',
     );
