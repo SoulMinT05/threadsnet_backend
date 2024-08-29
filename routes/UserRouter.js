@@ -8,7 +8,9 @@ router.get('/getDetailUser', verifyAccessToken, UserController.getDetailUser);
 router.post('/refreshCreateNewAccessToken', UserController.refreshCreateNewAccessToken);
 router.get('/logout', UserController.logout);
 router.put('/updateInfoFromUser', [verifyAccessToken], UserController.updateInfoFromUser);
+router.get('/getAllUsers', [verifyAccessToken, checkIsAdmin], UserController.getAllUsers);
 
+router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
 router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);
 

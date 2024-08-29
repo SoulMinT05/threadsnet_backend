@@ -155,6 +155,26 @@ const followUser = asyncHandler(async (req, res, next) => {
     }
 });
 
+const getAllUsers = asyncHandler(async (req, res) => {
+    const user = await User.find().select('-password -isAdmin -role -refreshToken');
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Get all users failed',
+    });
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    if (!userId) {
+        throw new Error('User not found');
+    }
+    const user = await User.findByIdAndDelete(userId);
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Delete user failed',
+    });
+});
+
 const updateInfoFromUser = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     if (!_id || Object.keys(req.body).length === 0) throw new Error('You need to type at least one field to update ');
@@ -186,6 +206,8 @@ module.exports = {
     refreshCreateNewAccessToken,
     logout,
     followUser,
+    getAllUsers,
+    deleteUser,
     updateInfoFromUser,
     updateInfoFromAdmin,
 };
