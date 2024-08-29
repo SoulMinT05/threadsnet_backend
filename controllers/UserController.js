@@ -101,48 +101,27 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 const followUser = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const userToModify = await User.findById(id);
+    const { userId } = req.params;
+    const userToModify = await User.findById(userId);
     const currentUser = await User.findById(req.user._id);
 
-    if (id === req.user._id) throw new Error('You cannot follow/unfollow this user');
+    if (userId === req.user._id) throw new Error('You cannot follow/unfollow this user');
     if (!userToModify || !currentUser) throw new Error('User not found');
-    const isFollowing = currentUser.following.includes(id);
+    const isFollowing = currentUser.following.includes(userId);
     if (isFollowing) {
         // Unfollow
         // Modify currentUser following, modify followers of userToModify
         const responseFollowing = await User.findByIdAndUpdate(
             req.user._id,
             {
-                $pull: { following: id },
+                $pull: { following: userId },
             },
             { new: true },
         );
         const responseFollower = await User.findByIdAndUpdate(
-            id,
+            userId,
             {
                 $pull: { followers: req.user._id },
-            },
-            { new: true },
-        );
-        return res.status(200).json({
-            success: responseFollowing && responseFollower ? true : false,
-            message: 'Follow user',
-            responseFollowing,
-            responseFollower,
-        });
-    } else {
-        const responseFollowing = await User.findByIdAndUpdate(
-            req.user._id,
-            {
-                $push: { following: id },
-            },
-            { new: true },
-        );
-        const responseFollower = await User.findByIdAndUpdate(
-            id,
-            {
-                $push: { followers: req.user._id },
             },
             { new: true },
         );
@@ -152,7 +131,52 @@ const followUser = asyncHandler(async (req, res, next) => {
             responseFollowing,
             responseFollower,
         });
+    } else {
+        const responseFollowing = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $push: { following: userId },
+            },
+            { new: true },
+        );
+        const responseFollower = await User.findByIdAndUpdate(
+            userId,
+            {
+                $push: { followers: req.user._id },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: responseFollowing && responseFollower ? true : false,
+            message: 'Follow user',
+            responseFollowing,
+            responseFollower,
+        });
     }
+});
+
+const updateInfoFromUser = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    if (!_id || Object.keys(req.body).length === 0) throw new Error('You need to type at least one field to update ');
+    const user = await User.findByIdAndUpdate(_id, req.body, { new: true }).select(
+        '-password -isAdmin -role -refreshToken',
+    );
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Update info user failed',
+    });
+});
+
+const updateInfoFromAdmin = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    if (Object.keys(req.body).length === 0) throw new Error('You need to type at least one field to update ');
+    const user = await User.findByIdAndUpdate(userId, req.body, { new: true }).select(
+        '-password -isAdmin -role -refreshToken',
+    );
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Update info user from admin failed',
+    });
 });
 
 module.exports = {
@@ -162,4 +186,6 @@ module.exports = {
     refreshCreateNewAccessToken,
     logout,
     followUser,
+    updateInfoFromUser,
+    updateInfoFromAdmin,
 };
