@@ -106,7 +106,8 @@ const followUser = asyncHandler(async (req, res, next) => {
     const userToModify = await User.findById(userId);
     const currentUser = await User.findById(req.user._id);
 
-    if (userId === req.user._id) throw new Error('You cannot follow/unfollow this user');
+    if (userId === req.user._id) throw new Error('You cannot follow/unfollow yourself');
+
     if (!userToModify || !currentUser) throw new Error('User not found');
     const isFollowing = currentUser.following.includes(userId);
     if (isFollowing) {
@@ -204,6 +205,16 @@ const updateInfoFromAdmin = asyncHandler(async (req, res) => {
     });
 });
 
+const getUserProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+    const user = await User.findOne({ username }).select('-password -updatedAt');
+    if (!user) throw new Error(`User ${username} not found`);
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Get user profile failed',
+    });
+});
+
 module.exports = {
     register,
     login,
@@ -215,4 +226,5 @@ module.exports = {
     deleteUser,
     updateInfoFromUser,
     updateInfoFromAdmin,
+    getUserProfile,
 };

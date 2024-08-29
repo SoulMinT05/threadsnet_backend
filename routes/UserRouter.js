@@ -11,6 +11,8 @@ router.put('/updateInfoFromUser', [verifyAccessToken], UserController.updateInfo
 router.get('/getAllUsers', [verifyAccessToken, checkIsAdmin], UserController.getAllUsers);
 
 router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
+
+router.get('/profile/:username', UserController.getUserProfile);
 router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);
 
