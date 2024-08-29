@@ -5,5 +5,6 @@ const { verifyAccessToken, checkIsStaff, checkIsAdmin } = require('../middleware
 router.post('/register', UserController.register);
 router.post('/login', UserController.login);
 router.get('/getDetailUser', verifyAccessToken, UserController.getDetailUser);
+router.get('/logout', UserController.logout);
 
 module.exports = router;

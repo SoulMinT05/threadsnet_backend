@@ -65,8 +65,31 @@ const getDetailUser = asyncHandler(async (req, res) => {
     });
 });
 
+const logout = asyncHandler(async (req, res) => {
+    const cookie = req.cookies;
+    if (!cookie || !cookie.refreshToken) throw new Error('Not found refresh token in cookies');
+    // Delete refreshToken in DB
+    await User.findOneAndUpdate(
+        { refreshToken: cookie.refreshToken },
+        {
+            refreshToken: '',
+        },
+        { new: true },
+    );
+    // Delete refreshToken in cookies
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: true,
+    });
+    return res.status(200).json({
+        success: true,
+        message: 'Logout successfully',
+    });
+});
+
 module.exports = {
     register,
     login,
     getDetailUser,
+    logout,
 };
