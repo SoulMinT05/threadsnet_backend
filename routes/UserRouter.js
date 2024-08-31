@@ -7,6 +7,8 @@ router.post('/login', UserController.login);
 router.get('/getDetailUser', verifyAccessToken, UserController.getDetailUser);
 router.post('/refreshCreateNewAccessToken', UserController.refreshCreateNewAccessToken);
 router.get('/logout', UserController.logout);
+router.get('/forgotPassword', UserController.forgotPassword);
+router.put('/resetPassword', UserController.resetPassword);
 router.put('/updateInfoFromUser', [verifyAccessToken], UserController.updateInfoFromUser);
 router.get('/getAllUsers', [verifyAccessToken, checkIsAdmin], UserController.getAllUsers);
 

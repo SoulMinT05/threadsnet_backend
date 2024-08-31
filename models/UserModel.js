@@ -95,7 +95,7 @@ UserSchema.methods = {
         const resetToken = crypto.randomBytes(32).toString('hex');
         // Create hash and update data by hex
         this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        this.passwordResetExpires = Date.now() + 15 * 60 * 1000;
+        this.passwordResetExpires = Date.now() + 5 * 60 * 1000;
         return resetToken;
     },
 };
