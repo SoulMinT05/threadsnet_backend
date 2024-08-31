@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
 const sendMail = require('../utils/sendMail');
-
 const { generateAccessToken, generateRefreshToken } = require('../middlewares/jwtMiddleware');
 
 const register = asyncHandler(async (req, res, next) => {

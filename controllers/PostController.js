@@ -22,6 +22,27 @@ const createPost = asyncHandler(async (req, res) => {
     });
 });
 
+const getDetailPost = asyncHandler(async (req, res, next) => {
+    const { postId } = req.params;
+    if (!postId) throw new Error('Post not found');
+
+    const post = await Post.findById(postId);
+    return res.status(200).json({
+        success: post ? true : false,
+        post: post ? post : 'Get detail post failed',
+    });
+});
+
+const getAllPosts = asyncHandler(async (req, res, next) => {
+    const post = await Post.find();
+    return res.status(200).json({
+        success: post ? true : false,
+        post: post ? post : 'Get all posts failed',
+    });
+});
+
 module.exports = {
     createPost,
+    getDetailPost,
+    getAllPosts,
 };
