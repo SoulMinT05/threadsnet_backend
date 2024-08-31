@@ -26,7 +26,13 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
     const { postId } = req.params;
     if (!postId) throw new Error('Post not found');
 
-    const post = await Post.findById(postId);
+    const post = await Post.findByIdAndUpdate(
+        postId,
+        {
+            $inc: { numberViews: 1 },
+        },
+        { new: true },
+    );
     return res.status(200).json({
         success: post ? true : false,
         post: post ? post : 'Get detail post failed',
