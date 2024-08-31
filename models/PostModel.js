@@ -42,6 +42,13 @@ const PostSchema = new mongoose.Schema(
                 },
             },
         ],
+        savedLists: [
+            {
+                type: mongoose.Types.ObjectId,
+                ref: 'User',
+                default: [],
+            },
+        ],
     },
     {
         // _id: false,

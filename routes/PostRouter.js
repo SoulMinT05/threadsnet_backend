@@ -8,6 +8,7 @@ router.get('/feed', verifyAccessToken, PostController.getFeedPosts);
 
 router.put('/liked/:postId', verifyAccessToken, PostController.likePost);
 router.post('/reply/:postId', verifyAccessToken, PostController.replyPost);
+router.put('/saved/:postId', verifyAccessToken, PostController.savePost);
 router.get('/:postId', PostController.getDetailPost);
 router.put('/:postId', verifyAccessToken, PostController.updatePost);
 router.delete('/:postId', verifyAccessToken, PostController.deletePost);

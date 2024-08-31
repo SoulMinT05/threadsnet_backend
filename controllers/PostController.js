@@ -135,6 +135,43 @@ const replyPost = asyncHandler(async (req, res) => {
     });
 });
 
+const savePost = asyncHandler(async (req, res) => {
+    const { postId } = req.params;
+    const { _id } = req.user;
+
+    const post = await Post.findById(postId);
+    if (!post) throw new Error('Post not found');
+    const userLikedPost = post.savedLists.includes(_id);
+
+    if (userLikedPost) {
+        const response = await Post.findByIdAndUpdate(
+            postId,
+            {
+                $pull: { savedLists: _id },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Unsaved post successfully' : 'Unsaved post failed',
+            response: response ? response : 'Unsaved post failed',
+        });
+    } else {
+        const response = await Post.findByIdAndUpdate(
+            postId,
+            {
+                $push: { savedLists: _id },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Saved post successfully' : 'Saved post failed',
+            response: response ? response : 'Saved post failed',
+        });
+    }
+});
+
 const getFeedPosts = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     const user = await User.findById(_id);
@@ -156,5 +193,6 @@ module.exports = {
     deletePost,
     likePost,
     replyPost,
+    savePost,
     getFeedPosts,
 };
