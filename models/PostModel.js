@@ -31,7 +31,7 @@ const PostSchema = new mongoose.Schema(
                     type: mongoose.Types.ObjectId,
                     ref: 'User',
                 },
-                text: {
+                textComment: {
                     type: String,
                 },
                 userAvatar: {

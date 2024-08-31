@@ -5,6 +5,8 @@ const { verifyAccessToken, checkIsStaff, checkIsAdmin } = require('../middleware
 router.post('/createPost', verifyAccessToken, PostController.createPost);
 router.get('/getAllPosts', [verifyAccessToken, checkIsAdmin], PostController.getAllPosts);
 
+router.put('/liked/:postId', verifyAccessToken, PostController.likePost);
+router.post('/reply/:postId', verifyAccessToken, PostController.replyPost);
 router.get('/:postId', PostController.getDetailPost);
 router.put('/:postId', verifyAccessToken, PostController.updatePost);
 router.delete('/:postId', verifyAccessToken, PostController.deletePost);
