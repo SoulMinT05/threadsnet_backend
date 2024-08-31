@@ -41,8 +41,39 @@ const getAllPosts = asyncHandler(async (req, res, next) => {
     });
 });
 
+const updatePost = asyncHandler(async (req, res, next) => {
+    const { postId } = req.params;
+    if (!postId) throw new Error(`Post ${postId} not found`);
+
+    const post = await Post.findById(postId);
+    if (post.postedBy.toString() !== req.user._id.toString()) throw new Error('Unauthorized to update post');
+
+    if (Object.keys(req.body).length === 0) throw new Error('You must type at least one field to update');
+    const updatePost = await Post.findByIdAndUpdate(postId, req.body, { new: true });
+    return res.status(200).json({
+        success: updatePost ? true : false,
+        updatePost: updatePost ? updatePost : 'Update post failed',
+    });
+});
+
+const deletePost = asyncHandler(async (req, res, next) => {
+    const { postId } = req.params;
+    if (!postId) throw new Error(`Post ${postId} not found`);
+
+    const post = await Post.findById(postId);
+    if (post.postedBy.toString() !== req.user._id.toString()) throw new Error('Unauthorized to delete post');
+
+    const deletePost = await Post.findByIdAndDelete(postId);
+    return res.status(200).json({
+        success: deletePost ? true : false,
+        deletePost: deletePost ? deletePost : 'Delete post failed',
+    });
+});
+
 module.exports = {
     createPost,
     getDetailPost,
     getAllPosts,
+    updatePost,
+    deletePost,
 };
