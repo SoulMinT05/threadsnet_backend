@@ -233,6 +233,11 @@ const deleteUser = asyncHandler(async (req, res) => {
 const updateInfoFromUser = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     if (!_id || Object.keys(req.body).length === 0) throw new Error('You need to type at least one field to update ');
+    if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        req.body.password = await bcrypt.hash(req.body.password, salt);
+    }
+
     const user = await User.findByIdAndUpdate(_id, req.body, { new: true }).select(
         '-password -isAdmin -role -refreshToken',
     );
