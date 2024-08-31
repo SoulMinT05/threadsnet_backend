@@ -32,6 +32,8 @@ const login = asyncHandler(async (req, res, next) => {
         });
     }
     const user = await User.findOne({ email });
+    if (user.isBlocked) throw new Error(`User with email ${user.email} is blocked`);
+
     if (user && (await user.isCorrectPassword(password))) {
         const { password, isAdmin, role, refreshToken, ...userData } = user._doc;
         // Add accessToken, refreshToken
@@ -57,6 +59,24 @@ const login = asyncHandler(async (req, res, next) => {
     } else {
         throw new Error('Error in email and password when logging in!');
     }
+});
+
+const blockUser = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { block } = req.body;
+
+    if (!block) throw new Error('You must select a block true or false');
+
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found!');
+
+    user.isBlocked = block;
+    await user.save();
+    return res.status(200).json({
+        success: user.isBlocked ? true : false,
+        message: user.isBlocked ? 'Block user successfully' : 'Unblock user successfully',
+        user,
+    });
 });
 
 const getDetailUser = asyncHandler(async (req, res) => {
@@ -275,6 +295,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 module.exports = {
     register,
     login,
+    blockUser,
     getDetailUser,
     refreshCreateNewAccessToken,
     forgotPassword,
