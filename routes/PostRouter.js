@@ -6,6 +6,8 @@ router.post('/createPost', verifyAccessToken, PostController.createPost);
 router.get('/getAllPosts', [verifyAccessToken, checkIsAdmin], PostController.getAllPosts);
 router.get('/feed', verifyAccessToken, PostController.getFeedPosts);
 
+router.put('/:postId/reply/:replyId', verifyAccessToken, PostController.updateReplyPost);
+router.delete('/:postId/reply/:replyId', verifyAccessToken, PostController.deleteReplyPost);
 router.put('/liked/:postId', verifyAccessToken, PostController.likePost);
 router.post('/reply/:postId', verifyAccessToken, PostController.replyPost);
 router.put('/saved/:postId', verifyAccessToken, PostController.savePost);
