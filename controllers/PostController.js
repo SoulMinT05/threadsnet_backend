@@ -172,6 +172,43 @@ const savePost = asyncHandler(async (req, res) => {
     }
 });
 
+const repostPost = asyncHandler(async (req, res) => {
+    const { postId } = req.params;
+    const userId = req.user.id;
+
+    const originalPost = await Post.findById(postId);
+    if (!originalPost) {
+        return res.status(404).send('Post not found');
+    }
+
+    const repost = new Post({
+        postedBy: userId,
+        text: originalPost.text,
+        image: originalPost.image,
+        numberViews: originalPost.numberViews,
+        likes: originalPost.likes,
+        replies: originalPost.replies,
+        savedLists: originalPost.savedLists,
+        originalPost: originalPost._id,
+        lastRepostedAt: Date.now(),
+    });
+    console.log('repost: ', repost);
+
+    await repost.save();
+
+    originalPost.numberViewsRepost += 1;
+    await originalPost.updateOne({ numberViewsRepost: originalPost.numberViewsRepost }, { timestamps: false }); // Không cập nhật updatedAt
+
+    console.log('repost: ', repost);
+    console.log('originalPost: ', originalPost);
+
+    return res.status(200).json({
+        success: repost ? true : false,
+        message: repost ? 'Reposted post successfully' : 'Unreposted post failed',
+        repost: repost ? repost : 'Unreposted post failed',
+    });
+});
+
 const getFeedPosts = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     const user = await User.findById(_id);
@@ -194,5 +231,6 @@ module.exports = {
     likePost,
     replyPost,
     savePost,
+    repostPost,
     getFeedPosts,
 };

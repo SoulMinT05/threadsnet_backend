@@ -18,6 +18,11 @@ const PostSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        numberViewsRepost: {
+            // Chuyển numberViewsRepost ra ngoài
+            type: Number,
+            default: 0,
+        },
         likes: [
             {
                 type: mongoose.Types.ObjectId,
@@ -49,6 +54,17 @@ const PostSchema = new mongoose.Schema(
                 default: [],
             },
         ],
+        originalPost: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Post',
+            // numberViewsRepost: {
+            //     type: Number,
+            //     default: 0,
+            // },
+        },
+        lastRepostedAt: {
+            type: Date,
+        },
     },
     {
         // _id: false,
