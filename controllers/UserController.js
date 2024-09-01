@@ -285,15 +285,12 @@ const updateInfoFromAdmin = asyncHandler(async (req, res) => {
 const createUserFromAdmin = asyncHandler(async (req, res) => {
     const { name, email, username, password } = req.body;
     const passwordUser = password || '123';
-    console.log('passwordUser: ', passwordUser);
     if (!name || !email || !username) throw new Error('Missing input create user from admin');
     const user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {
         throw new Error(`User with username ${username} and email ${email} has already existed`);
     } else {
         const newUser = await User.create({ ...req.body, password: passwordUser });
-        console.log('password: ', password);
-        console.log('newUser: ', newUser);
         return res.status(200).json({
             success: newUser ? true : false,
             newUser: newUser ? newUser : 'Create user account from admin failed',
