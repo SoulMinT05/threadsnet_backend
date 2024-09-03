@@ -280,7 +280,9 @@ const updateInfoFromUser = asyncHandler(async (req, res) => {
             // [0] --> 'avatar
             await cloudinary.uploader.destroy(currentUser.avatar.split('/').pop().split('.')[0]);
         }
-        const uploadResponse = await cloudinary.uploader.upload(avatar);
+        const uploadResponse = await cloudinary.uploader.upload(avatar, {
+            folder: 'threadsnet',
+        });
         avatar = uploadResponse.secure_url;
     } else {
         avatar = currentUser.avatar;

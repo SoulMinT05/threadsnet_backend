@@ -2,10 +2,12 @@ const Post = require('../models/PostModel');
 const User = require('../models/UserModel');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
+const cloudinary = require('cloudinary').v2;
 
 const createPost = asyncHandler(async (req, res) => {
-    const { postedBy, textComment, image } = req.body;
-    if (!postedBy || !textComment) throw new Error('Missing postedBy or textComment');
+    const { postedBy, text } = req.body;
+    let { image } = req.body;
+    if (!postedBy || !text) throw new Error('Missing postedBy or text');
 
     const user = await User.findById(postedBy);
     if (!user) throw new Error('User not found');
@@ -13,9 +15,20 @@ const createPost = asyncHandler(async (req, res) => {
         throw new Error('Unauthorized to create post because user._id !== req.user._id');
 
     const maxLength = 500;
-    if (textComment.length > maxLength) throw new Error(`Text comment should be less than ${maxLength} words`);
+    if (text.length > maxLength) throw new Error(`Text comment should be less than ${maxLength} words`);
 
-    const newPost = await Post.create(req.body);
+    if (image) {
+        const uploadResponse = await cloudinary.uploader.upload(image, {
+            folder: 'threadsnet',
+        });
+        console.log('Upload response: ', uploadResponse);
+        image = uploadResponse.secure_url;
+    }
+
+    const newPost = await Post.create({
+        ...req.body,
+        image,
+    });
     return res.status(200).json({
         success: newPost ? true : false,
         message: newPost ? 'Created post successfully' : 'Failed to create post',
