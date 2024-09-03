@@ -7,6 +7,8 @@ const crypto = require('crypto');
 const sendMail = require('../utils/sendMail');
 const { generateAccessToken, generateRefreshToken } = require('../middlewares/jwtMiddleware');
 
+const cloudinary = require('cloudinary').v2;
+
 const register = asyncHandler(async (req, res, next) => {
     const { name, email, username, password } = req.body;
     if (!name || !email || !username || !password) throw new Error('Missing input register');
@@ -256,10 +258,43 @@ const updateInfoFromUser = asyncHandler(async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         req.body.password = await bcrypt.hash(req.body.password, salt);
     }
+    let { avatar } = req.body;
+    let currentUser = await User.findById(_id);
+    if (avatar) {
+        if (currentUser.avatar) {
+            // "https://res.cloudinary.com/mycloud/image/upload/v1234567890/myfolder/avatar.png"
+            // .split('/)
+            // [
+            //     "https:",
+            //     "",
+            //     "res.cloudinary.com",
+            //     "mycloud",
+            //     "image",
+            //     "upload",
+            //     "v1234567890",
+            //     "myfolder",
+            //     "avatar.png"
+            // ]
+            // .pop() --> "avatar.png"
+            // .split('.) --> ["avatar", "png"]
+            // [0] --> 'avatar
+            await cloudinary.uploader.destroy(currentUser.avatar.split('/').pop().split('.')[0]);
+        }
+        const uploadResponse = await cloudinary.uploader.upload(avatar);
+        avatar = uploadResponse.secure_url;
+    } else {
+        avatar = currentUser.avatar;
+    }
 
-    const user = await User.findByIdAndUpdate(_id, req.body, { new: true }).select(
-        '-password -isAdmin -role -refreshToken',
-    );
+    const user = await User.findByIdAndUpdate(
+        _id,
+        {
+            ...req.body,
+            avatar,
+        },
+        { new: true },
+    ).select('-password -isAdmin -role -refreshToken');
+
     return res.status(200).json({
         success: user ? true : false,
         user: user ? user : 'Update info user failed',
