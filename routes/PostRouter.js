@@ -4,7 +4,7 @@ const { verifyAccessToken, checkIsStaff, checkIsAdmin } = require('../middleware
 
 router.post('/createPost', verifyAccessToken, PostController.createPost);
 router.get('/getAllPosts', [verifyAccessToken, checkIsAdmin], PostController.getAllPosts);
-router.get('/feed', verifyAccessToken, PostController.getFeedPosts);
+router.get('/following', verifyAccessToken, PostController.getFollowingPosts);
 
 router.put('/:postId/reply/:replyId', verifyAccessToken, PostController.updateReplyPost);
 router.delete('/:postId/reply/:replyId', verifyAccessToken, PostController.deleteReplyPost);

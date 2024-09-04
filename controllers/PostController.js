@@ -271,16 +271,16 @@ const repostPost = asyncHandler(async (req, res) => {
     });
 });
 
-const getFeedPosts = asyncHandler(async (req, res) => {
+const getFollowingPosts = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     const user = await User.findById(_id);
     if (!user) throw new Error('User not found');
 
     const isFollowing = user.following;
-    const feedPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
+    const followingPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
     res.status(200).json({
-        success: feedPosts ? true : false,
-        feedPosts: feedPosts ? feedPosts : 'Get feed posts failed',
+        success: followingPosts ? true : false,
+        followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
     });
 });
 
@@ -294,7 +294,7 @@ module.exports = {
     replyPost,
     savePost,
     repostPost,
-    getFeedPosts,
+    getFollowingPosts,
     updateReplyPost,
     deleteReplyPost,
 };

@@ -16,7 +16,7 @@ router.post('/createUserFromAdmin', [verifyAccessToken, checkIsAdmin], UserContr
 router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
 
 router.put('/block/:userId', [verifyAccessToken, checkIsAdmin], UserController.blockUser);
-router.get('/profile/:username', UserController.getUserProfile);
+router.get('/profile/:query', UserController.getUserProfile);
 router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);
 

@@ -6,6 +6,7 @@ const crypto = require('crypto');
 
 const sendMail = require('../utils/sendMail');
 const { generateAccessToken, generateRefreshToken } = require('../middlewares/jwtMiddleware');
+const { default: mongoose } = require('mongoose');
 
 const cloudinary = require('cloudinary').v2;
 
@@ -336,8 +337,16 @@ const createUserFromAdmin = asyncHandler(async (req, res) => {
 });
 
 const getUserProfile = asyncHandler(async (req, res) => {
-    const { username } = req.params;
-    const user = await User.findOne({ username }).select('-password -updatedAt');
+    const { query } = req.params;
+    // query is either username or id
+
+    let user;
+    if (mongoose.Types.ObjectId.isValid(query)) {
+        user = await User.findOne({ _id: query }).select('-password -updatedAt -refreshToken -isAdmin -role');
+    } else {
+        user = await User.findOne({ username: query }).select('-password -updatedAt -refreshToken -isAdmin -role');
+    }
+
     if (!user) throw new Error(`User ${username} not found`);
     return res.status(200).json({
         success: user ? true : false,
