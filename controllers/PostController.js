@@ -54,10 +54,10 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
 });
 
 const getAllPosts = asyncHandler(async (req, res, next) => {
-    const post = await Post.find();
+    const posts = await Post.find().sort({ createdAt: -1 });
     return res.status(200).json({
-        success: post ? true : false,
-        post: post ? post : 'Get all posts failed',
+        success: posts ? true : false,
+        posts: posts ? posts : 'Get all posts failed',
     });
 });
 
@@ -284,6 +284,18 @@ const getFollowingPosts = asyncHandler(async (req, res) => {
     });
 });
 
+const getUserPosts = async (req, res) => {
+    const { username } = req.params;
+    const user = await User.findOne({ username });
+    if (!user) throw new Error(`User not found`);
+
+    const posts = await Post.find({ postedBy: user._id }).sort({ createdAt: -1 });
+    res.status(200).json({
+        success: posts ? true : false,
+        posts: posts ? posts : 'Get user posts failed',
+    });
+};
+
 module.exports = {
     createPost,
     getDetailPost,
@@ -294,7 +306,8 @@ module.exports = {
     replyPost,
     savePost,
     repostPost,
-    getFollowingPosts,
     updateReplyPost,
     deleteReplyPost,
+    getFollowingPosts,
+    getUserPosts,
 };
