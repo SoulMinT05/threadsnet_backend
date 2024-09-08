@@ -83,6 +83,15 @@ const deletePost = asyncHandler(async (req, res, next) => {
     const post = await Post.findById(postId);
     if (post.postedBy.toString() !== req.user._id.toString()) throw new Error('Unauthorized to delete post');
 
+    if (post.image) {
+        const imageUrl = post.image; // e.g., 'https://res.cloudinary.com/.../threadsnet/imageName.jpg'
+        const imagePath = imageUrl.split('/').slice(-2).join('/'); // 'threadsnet/imageName.jpg'
+        const imageId = imagePath.split('.')[0]; // 'threadsnet/imageName'
+
+        // Delete the image from Cloudinary
+        await cloudinary.uploader.destroy(imageId);
+    }
+
     const deletePost = await Post.findByIdAndDelete(postId);
     return res.status(200).json({
         success: deletePost ? true : false,
@@ -287,7 +296,7 @@ const getFollowingPosts = asyncHandler(async (req, res) => {
 const getUserPosts = async (req, res) => {
     const { username } = req.params;
     const user = await User.findOne({ username });
-    if (!user) throw new Error(`User not found`);
+    if (!user) throw new Error('User not found');
 
     const posts = await Post.find({ postedBy: user._id }).sort({ createdAt: -1 });
     res.status(200).json({
