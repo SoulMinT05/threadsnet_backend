@@ -47,10 +47,13 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
         },
         { new: true },
     );
-    return res.status(200).json({
-        success: post ? true : false,
-        post: post ? post : 'Get detail post failed',
-    });
+    if (!post) throw new Error('Get detail post failed');
+    // return res.status(200).json({
+    //     success: post ? true : false,
+    //     // post: post ? post : 'Get detail post failed',
+    //     post,
+    // });
+    return res.status(200).json(post);
 });
 
 const getAllPosts = asyncHandler(async (req, res, next) => {
