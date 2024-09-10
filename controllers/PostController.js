@@ -50,8 +50,7 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
     if (!post) throw new Error('Get detail post failed');
     // return res.status(200).json({
     //     success: post ? true : false,
-    //     // post: post ? post : 'Get detail post failed',
-    //     post,
+    //     post: post ? post : 'Get detail post failed',
     // });
     return res.status(200).json(post);
 });
@@ -104,17 +103,17 @@ const deletePost = asyncHandler(async (req, res, next) => {
 
 const likePost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
-    const { _id } = req.user;
+    const userId = req.user._id;
 
     const post = await Post.findById(postId);
     if (!post) throw new Error('Post not found');
-    const userLikedPost = post.likes.includes(_id);
+    const userLikedPost = post.likes.includes(userId);
 
     if (userLikedPost) {
         const response = await Post.findByIdAndUpdate(
             postId,
             {
-                $pull: { likes: _id },
+                $pull: { likes: userId },
             },
             { new: true },
         );
@@ -127,7 +126,7 @@ const likePost = asyncHandler(async (req, res) => {
         const response = await Post.findByIdAndUpdate(
             postId,
             {
-                $push: { likes: _id },
+                $push: { likes: userId },
             },
             { new: true },
         );
@@ -141,11 +140,12 @@ const likePost = asyncHandler(async (req, res) => {
 
 const replyPost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
-
     const { textComment } = req.body;
-    const { _id } = req.user;
-    const userAvatar = req.user.userAvatar;
-    const username = req.user.username;
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    const avatar = user.avatar;
+    const username = user.username;
 
     if (!textComment) throw new Error('Text comment field is required');
 
@@ -155,9 +155,9 @@ const replyPost = asyncHandler(async (req, res) => {
     const replyId = new mongoose.Types.ObjectId();
     const reply = {
         _id: replyId,
-        userId: _id,
+        userId,
         textComment,
-        userAvatar,
+        avatar,
         username,
     };
 
@@ -165,8 +165,8 @@ const replyPost = asyncHandler(async (req, res) => {
     await post.save();
 
     return res.status(200).json({
-        success: post ? true : false,
-        post: post ? post : 'Reply post failed',
+        success: reply ? true : false,
+        reply: reply ? reply : 'Reply post failed',
     });
 });
 

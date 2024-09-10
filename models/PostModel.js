@@ -40,7 +40,7 @@ const PostSchema = new mongoose.Schema(
                 textComment: {
                     type: String,
                 },
-                userAvatar: {
+                avatar: {
                     type: String,
                 },
                 username: {
