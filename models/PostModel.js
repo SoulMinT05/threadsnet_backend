@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const CommentSchema = require('./CommentModel');
 
 const PostSchema = new mongoose.Schema(
     {
@@ -11,15 +12,13 @@ const PostSchema = new mongoose.Schema(
         },
         image: {
             type: String,
-            default: 'https://wallpapers.com/images/hd/work-desk-blogging-backdrop-ij7yb6kjl1y3kmg1.jpg',
-            // required: true,
+            default: '',
         },
         numberViews: {
             type: Number,
             default: 0,
         },
         numberViewsRepost: {
-            // Chuyển numberViewsRepost ra ngoài
             type: Number,
             default: 0,
         },
@@ -30,22 +29,29 @@ const PostSchema = new mongoose.Schema(
                 default: [],
             },
         ],
-        replies: [
+        // replies: [
+        //     {
+        //         _id: mongoose.Schema.Types.ObjectId,
+        //         userId: {
+        //             type: mongoose.Types.ObjectId,
+        //             ref: 'User',
+        //         },
+        //         textComment: {
+        //             type: String,
+        //         },
+        //         avatar: {
+        //             type: String,
+        //         },
+        //         username: {
+        //             type: String,
+        //         },
+        //     },
+        // ],
+        // comments: [CommentSchema],
+        comments: [
             {
-                _id: mongoose.Schema.Types.ObjectId,
-                userId: {
-                    type: mongoose.Types.ObjectId,
-                    ref: 'User',
-                },
-                textComment: {
-                    type: String,
-                },
-                avatar: {
-                    type: String,
-                },
-                username: {
-                    type: String,
-                },
+                type: mongoose.Types.ObjectId, // Dùng ObjectId để tham chiếu đến Comment
+                ref: 'Comment', // Tham chiếu tới model Comment
             },
         ],
         savedLists: [

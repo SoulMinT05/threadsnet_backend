@@ -1,4 +1,5 @@
 const User = require('../models/UserModel');
+const Post = require('../models/PostModel');
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
@@ -253,14 +254,15 @@ const deleteUser = asyncHandler(async (req, res) => {
 });
 
 const updateInfoFromUser = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    if (!_id || Object.keys(req.body).length === 0) throw new Error('You need to type at least one field to update ');
+    const userId = req.user._id;
+    if (!userId || Object.keys(req.body).length === 0)
+        throw new Error('You need to type at least one field to update ');
     if (req.body.password) {
         const salt = await bcrypt.genSalt(10);
         req.body.password = await bcrypt.hash(req.body.password, salt);
     }
     let { avatar } = req.body;
-    let currentUser = await User.findById(_id);
+    let currentUser = await User.findById(userId);
     if (avatar) {
         if (currentUser.avatar) {
             // "https://res.cloudinary.com/mycloud/image/upload/v1234567890/myfolder/avatar.png"
@@ -290,13 +292,31 @@ const updateInfoFromUser = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findByIdAndUpdate(
-        _id,
+        userId,
         {
             ...req.body,
             avatar,
         },
         { new: true },
     ).select('-password -isAdmin -role -refreshToken');
+
+    const userById = await User.findById(userId);
+
+    await Post.updateMany(
+        {
+            'replies.userId': userId,
+        },
+        {
+            $set: {
+                'replies.$[reply].username': userById.username,
+                'replies.$[reply].avatar': userById.avatar,
+            },
+            // reply: random words, be able to change any words into reply
+        },
+        {
+            arrayFilters: [{ 'reply.userId': userId }],
+        },
+    );
 
     return res.status(200).json({
         success: user ? true : false,
@@ -354,6 +374,23 @@ const getUserProfile = asyncHandler(async (req, res) => {
     });
 });
 
+const getLikedPosts = async (req, res) => {
+    const userById = req.params.userId;
+
+    const user = await User.findById(userById).populate('liked');
+    console.log('user: ', user);
+
+    if (!user) throw new Error('User not found');
+
+    const likedPosts = user.liked;
+    console.log('likedPosts: ', likedPosts);
+
+    return res.status(200).json({
+        success: likedPosts ? true : false,
+        likedPosts: likedPosts ? likedPosts : 'Get liked posts failed',
+    });
+};
+
 module.exports = {
     register,
     login,
@@ -370,4 +407,5 @@ module.exports = {
     updateInfoFromAdmin,
     createUserFromAdmin,
     getUserProfile,
+    getLikedPosts,
 };

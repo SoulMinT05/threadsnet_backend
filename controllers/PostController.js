@@ -146,6 +146,8 @@ const replyPost = asyncHandler(async (req, res) => {
 
     const avatar = user.avatar;
     const username = user.username;
+    const createdAt = new Date();
+    const updatedAt = new Date();
 
     if (!textComment) throw new Error('Text comment field is required');
 
@@ -159,6 +161,8 @@ const replyPost = asyncHandler(async (req, res) => {
         textComment,
         avatar,
         username,
+        createdAt,
+        updatedAt,
     };
 
     post.replies.push(reply);
@@ -295,6 +299,19 @@ const getFollowingPosts = asyncHandler(async (req, res) => {
         followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
     });
 });
+
+// const getLikedPosts = asyncHandler(async (req, res) => {
+//     const { _id } = req.user;
+//     const user = await User.findById(_id);
+//     if (!user) throw new Error('User not found');
+
+//     const isFollowing = user.following;
+//     const followingPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
+//     res.status(200).json({
+//         success: followingPosts ? true : false,
+//         followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
+//     });
+// });
 
 const getUserPosts = async (req, res) => {
     const { username } = req.params;
