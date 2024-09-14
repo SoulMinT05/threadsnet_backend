@@ -105,9 +105,33 @@ const updateReply = asyncHandler(async (req, res) => {
     });
 });
 
+// Get all comments in any post
+const populateUserDetails = asyncHandler(async (comments) => {
+    for (const comment of comments) {
+        await comment.populate('userId', 'username name avatar');
+        if (comment.replies.length > 0) {
+            await comment.populate('replies.userId', 'username name avatar');
+        }
+    }
+});
+const getAllCommentsInPost = asyncHandler(async (req, res) => {
+    const { postId } = req.params;
+    const post = await Post.findById(postId);
+    if (!post) throw new Error('Post not found');
+
+    let comments = await Comment.find({ postId });
+    await populateUserDetails(comments);
+
+    return res.status(200).json({
+        success: comments ? true : false,
+        comments: comments ? comments : 'Get comment in post failed',
+    });
+});
+
 module.exports = {
     createComment,
     updateComment,
     createReply,
     updateReply,
+    getAllCommentsInPost,
 };

@@ -10,4 +10,7 @@ router.post('/create/reply/:commentId', verifyAccessToken, CommentController.cre
 router.post('/:postId', verifyAccessToken, CommentController.createComment);
 router.put('/:commentId', verifyAccessToken, CommentController.updateComment);
 
+// Get all post comments
+router.get('/post/:postId', verifyAccessToken, CommentController.getAllCommentsInPost);
+
 module.exports = router;
