@@ -8,7 +8,6 @@ const cloudinary = require('cloudinary').v2;
 const createComment = asyncHandler(async (req, res) => {
     const { postId } = req.params;
 
-    // const { userId, textComment } = req.body;
     const userId = req.user._id;
     const { textComment } = req.body;
 
@@ -22,7 +21,9 @@ const createComment = asyncHandler(async (req, res) => {
     const username = user.username;
 
     const newComment = await Comment.create({
-        ...req.body,
+        textComment,
+        userId,
+        postId,
         avatar,
         username,
     });
@@ -38,9 +39,15 @@ const createComment = asyncHandler(async (req, res) => {
 const updateComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
     const { textComment } = req.body;
+    const userId = req.user._id;
 
     const comment = await Comment.findById(commentId);
     if (!comment) throw new Error(`Comment ${commentId} not found`);
+
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    if (userId !== comment.userId.toString()) throw new Error('You can only update your comment');
 
     const updatedComment = await Comment.findByIdAndUpdate(
         commentId,
@@ -91,6 +98,8 @@ const updateReply = asyncHandler(async (req, res) => {
     const comment = await Comment.findById(commentId);
     if (!comment) throw new Error(`Comment ${commentId} not found`);
 
+    if (userId !== comment.userId.toString()) throw new Error('You can only update your comment');
+
     const replyIndex = comment.replies.findIndex((reply) => reply._id.toString() === replyId);
     if (replyIndex === -1) throw new Error(`Reply not found`);
 
@@ -128,10 +137,53 @@ const getAllCommentsInPost = asyncHandler(async (req, res) => {
     });
 });
 
+const deleteComment = asyncHandler(async (req, res) => {
+    const { commentId } = req.params;
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error('Comment not found');
+
+    const userId = req.user._id;
+    if (userId !== comment.userId.toString()) throw new Error('You can only delete your comment');
+
+    await Post.findOneAndUpdate(
+        {
+            comments: commentId,
+        },
+        { $pull: { comments: commentId } },
+        {
+            new: true,
+        },
+    );
+    await comment.deleteOne();
+    return res.status(200).json({
+        success: comment ? true : false,
+        comment: comment ? comment : 'Delete comment failed',
+    });
+});
+
+const deleteReply = asyncHandler(async (req, res) => {
+    const { commentId, replyId } = req.params;
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error('Comment not found');
+
+    const userId = req.user._id;
+    if (userId !== comment.userId.toString()) throw new Error('You can only delete your reply');
+
+    comment.replies = comment.replies.filter((reply) => reply._id.toString() !== replyId);
+
+    await comment.save();
+    return res.status(200).json({
+        success: comment ? true : false,
+        comment: comment ? comment : 'Delete reply failed',
+    });
+});
+
 module.exports = {
     createComment,
     updateComment,
     createReply,
     updateReply,
     getAllCommentsInPost,
+    deleteComment,
+    deleteReply,
 };
