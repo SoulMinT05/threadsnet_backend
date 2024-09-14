@@ -35,6 +35,26 @@ const createComment = asyncHandler(async (req, res) => {
     });
 });
 
+const updateComment = asyncHandler(async (req, res) => {
+    const { commentId } = req.params;
+    const { textComment } = req.body;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error(`Comment ${commentId} not found`);
+
+    const updatedComment = await Comment.findByIdAndUpdate(
+        commentId,
+        {
+            textComment,
+        },
+        { new: true },
+    );
+    return res.status(200).json({
+        success: updatedComment ? true : false,
+        updatedComment: updatedComment ? updatedComment : 'Update comment failed',
+    });
+});
+
 const createReply = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
     const { textComment } = req.body;
@@ -63,8 +83,31 @@ const createReply = asyncHandler(async (req, res) => {
         parentComment: parentComment ? parentComment : 'Create reply failed',
     });
 });
+const updateReply = asyncHandler(async (req, res) => {
+    const { commentId, replyId } = req.params;
+    const { textComment } = req.body;
+    const userId = req.user._id;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error(`Comment ${commentId} not found`);
+
+    const replyIndex = comment.replies.findIndex((reply) => reply._id.toString() === replyId);
+    if (replyIndex === -1) throw new Error(`Reply not found`);
+
+    if (comment.replies[replyIndex].userId.toString() !== userId) throw new Error('You can only update your reply');
+
+    comment.replies[replyIndex].textComment = textComment;
+    await comment.save();
+    return res.status(200).json({
+        success: true,
+        comment,
+        message: 'Update reply successfully',
+    });
+});
 
 module.exports = {
     createComment,
+    updateComment,
     createReply,
+    updateReply,
 };
