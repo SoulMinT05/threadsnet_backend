@@ -178,6 +178,81 @@ const deleteReply = asyncHandler(async (req, res) => {
     });
 });
 
+const likeComment = asyncHandler(async (req, res) => {
+    const { commentId } = req.params;
+    const userId = req.user._id;
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error('Comment not found');
+    const userLikedReply = comment.likes.includes(userId);
+
+    if (userLikedReply) {
+        const response = await Comment.findByIdAndUpdate(
+            commentId,
+            {
+                $pull: { likes: userId },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Unliked comment successfully' : 'Unliked comment failed',
+            response: response ? response : 'Unliked comment failed',
+        });
+    } else {
+        const response = await Comment.findByIdAndUpdate(
+            commentId,
+            {
+                $push: { likes: userId },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Liked comment successfully' : 'Liked comment failed',
+            response: response ? response : 'Liked comment failed',
+        });
+    }
+});
+
+const likeReply = asyncHandler(async (req, res) => {
+    const { commentId, replyId } = req.params;
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error('Comment not found');
+
+    const userId = req.user._id;
+    const replyComment = comment.replies.id(replyId); //find id of replies, but it's same with replyId
+    if (!replyComment) throw new Error('Reply not found');
+
+    const userLikedReply = replyComment.likes.includes(userId);
+    if (userLikedReply) {
+        const response = await Comment.findOneAndUpdate(
+            { _id: commentId, 'replies._id': replyComment._id },
+            {
+                $pull: { 'replies.$.likes': userId },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Unliked reply successfully' : 'Unliked reply failed',
+            response: response ? response : 'Unliked reply failed',
+        });
+    } else {
+        const response = await Comment.findOneAndUpdate(
+            { _id: commentId, 'replies._id': replyComment._id },
+            {
+                $push: { 'replies.$.likes': userId },
+            },
+            { new: true },
+        );
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Liked reply successfully' : 'Liked reply failed',
+            response: response ? response : 'Liked reply failed',
+        });
+    }
+});
+
 module.exports = {
     createComment,
     updateComment,
@@ -186,4 +261,6 @@ module.exports = {
     getAllCommentsInPost,
     deleteComment,
     deleteReply,
+    likeComment,
+    likeReply,
 };
