@@ -31,6 +31,12 @@ const CommentSchema = new mongoose.Schema(
                     type: mongoose.Types.ObjectId,
                     ref: 'User',
                 },
+                avatar: {
+                    type: String,
+                },
+                username: {
+                    type: String,
+                },
                 textComment: {
                     type: String,
                 },

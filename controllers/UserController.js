@@ -377,17 +377,23 @@ const getUserProfile = asyncHandler(async (req, res) => {
 const getLikedPosts = async (req, res) => {
     const userById = req.params.userId;
 
-    const user = await User.findById(userById).populate('liked');
-    console.log('user: ', user);
+    const user = await User.findById(userById)
+        .populate({
+            path: 'liked',
+            populate: {
+                path: 'postedBy',
+                select: '-password -role -isAdmin -refreshToken',
+            },
+        })
+        .select('-password');
 
-    if (!user) throw new Error('User not found');
-
-    const likedPosts = user.liked;
-    console.log('likedPosts: ', likedPosts);
+    if (!user) {
+        return res.status(404).json({ message: 'User not found!' });
+    }
 
     return res.status(200).json({
-        success: likedPosts ? true : false,
-        likedPosts: likedPosts ? likedPosts : 'Get liked posts failed',
+        success: user ? true : false,
+        user: user ? user : 'Get liked posts by user failed',
     });
 };
 

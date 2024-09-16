@@ -7,7 +7,7 @@ const cloudinary = require('cloudinary').v2;
 const createPost = asyncHandler(async (req, res) => {
     const { postedBy, text } = req.body;
     let { image } = req.body;
-    if (!postedBy || !text) throw new Error('Missing postedBy or text');
+    if (!postedBy || (!text && !image)) throw new Error('Missing postedBy or text');
 
     const user = await User.findById(postedBy);
     if (!user) throw new Error('User not found');
@@ -46,7 +46,13 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
             $inc: { numberViews: 1 },
         },
         { new: true },
-    );
+    ).populate({
+        path: 'comments',
+        populate: {
+            path: 'userId',
+            select: 'name username email avatar createdAt updatedAt',
+        },
+    });
     if (!post) throw new Error('Get detail post failed');
     // return res.status(200).json({
     //     success: post ? true : false,
@@ -56,7 +62,15 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
 });
 
 const getAllPosts = asyncHandler(async (req, res, next) => {
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const posts = await Post.find()
+        .sort({ createdAt: -1 })
+        .populate({
+            path: 'comments',
+            populate: {
+                path: 'userId',
+                select: 'name username email avatar createdAt updatedAt',
+            },
+        });
     return res.status(200).json({
         success: posts ? true : false,
         posts: posts ? posts : 'Get all posts failed',
@@ -117,6 +131,10 @@ const likePost = asyncHandler(async (req, res) => {
             },
             { new: true },
         );
+        await User.findByIdAndUpdate(userId, {
+            $pull: { liked: postId },
+        });
+
         return res.status(200).json({
             success: response ? true : false,
             message: response ? 'Unliked post successfully' : 'Unliked post failed',
@@ -130,6 +148,9 @@ const likePost = asyncHandler(async (req, res) => {
             },
             { new: true },
         );
+        await User.findByIdAndUpdate(userId, {
+            $push: { liked: postId },
+        });
         return res.status(200).json({
             success: response ? true : false,
             message: response ? 'Liked post successfully' : 'Liked post failed',
@@ -138,96 +159,97 @@ const likePost = asyncHandler(async (req, res) => {
     }
 });
 
-const replyPost = asyncHandler(async (req, res) => {
-    const { postId } = req.params;
-    const { textComment } = req.body;
-    const userId = req.user._id;
-    const user = await User.findById(userId);
+// const replyPost = asyncHandler(async (req, res) => {
+//     const { postId } = req.params;
+//     const { textComment } = req.body;
+//     const userId = req.user._id;
+//     const user = await User.findById(userId);
 
-    const avatar = user.avatar;
-    const username = user.username;
-    const createdAt = new Date();
-    const updatedAt = new Date();
+//     const avatar = user.avatar;
+//     const username = user.username;
+//     const createdAt = new Date();
+//     const updatedAt = new Date();
 
-    if (!textComment) throw new Error('Text comment field is required');
+//     if (!textComment) throw new Error('Text comment field is required');
 
-    const post = await Post.findById(postId);
-    if (!post) throw new Error('Post not found');
+//     const post = await Post.findById(postId);
+//     if (!post) throw new Error('Post not found');
 
-    const replyId = new mongoose.Types.ObjectId();
-    const reply = {
-        _id: replyId,
-        userId,
-        textComment,
-        avatar,
-        username,
-        createdAt,
-        updatedAt,
-    };
+//     const replyId = new mongoose.Types.ObjectId();
+//     const reply = {
+//         _id: replyId,
+//         userId,
+//         textComment,
+//         avatar,
+//         username,
+//         createdAt,
+//         updatedAt,
+//     };
 
-    post.replies.push(reply);
-    await post.save();
+//     post.replies.push(reply);
+//     await post.save();
 
-    return res.status(200).json({
-        success: reply ? true : false,
-        reply: reply ? reply : 'Reply post failed',
-    });
-});
+//     return res.status(200).json({
+//         success: reply ? true : false,
+//         reply: reply ? reply : 'Reply post failed',
+//     });
+// });
 
-const updateReplyPost = asyncHandler(async (req, res) => {
-    const { postId, replyId } = req.params;
-    const { textComment } = req.body;
-    const userId = req.user._id;
+// const updateReplyPost = asyncHandler(async (req, res) => {
+//     const { postId, replyId } = req.params;
+//     const { textComment } = req.body;
+//     const userId = req.user._id;
 
-    if (!textComment) throw new Error('Text comment field is required');
+//     if (!textComment) throw new Error('Text comment field is required');
 
-    const post = await Post.findById(postId);
-    if (!post) throw new Error('Post not found');
+//     const post = await Post.findById(postId);
+//     if (!post) throw new Error('Post not found');
 
-    const replyIndex = post.replies.findIndex((reply) => reply._id.toString() === replyId);
-    if (replyIndex === -1) throw new Error('Reply not found');
+//     const replyIndex = post.replies.findIndex((reply) => reply._id.toString() === replyId);
+//     if (replyIndex === -1) throw new Error('Reply not found');
 
-    const reply = post.replies[replyIndex];
-    console.log('reply :', reply);
-    if (!reply || reply.userId.toString() !== userId.toString()) {
-        return res.status(403).json({ message: 'Unauthorized to edit this reply' });
-    }
+//     const reply = post.replies[replyIndex];
+//     console.log('reply :', reply);
+//     if (!reply || reply.userId.toString() !== userId.toString()) {
+//         return res.status(403).json({ message: 'Unauthorized to edit this reply' });
+//     }
 
-    post.replies[replyIndex].textComment = textComment;
-    await post.save();
-    return res.status(200).json({
-        success: true,
-        message: 'Reply updated successfully',
-        post: post,
-    });
-});
+//     post.replies[replyIndex].textComment = textComment;
+//     await post.save();
+//     return res.status(200).json({
+//         success: true,
+//         message: 'Reply updated successfully',
+//         post: post,
+//     });
+// });
 
-const deleteReplyPost = asyncHandler(async (req, res) => {
-    const { postId, replyId } = req.params;
-    const userId = req.user._id;
+// const deleteReplyPost = asyncHandler(async (req, res) => {
+//     const { postId, replyId } = req.params;
+//     const userId = req.user._id;
 
-    const post = await Post.findById(postId);
-    if (!post) throw new Error('Post not found');
+//     const post = await Post.findById(postId);
+//     if (!post) throw new Error('Post not found');
 
-    const replyIndex = post.replies.findIndex((reply) => reply._id.toString() === replyId);
-    if (replyIndex === -1) {
-        return res.status(404).json({ message: 'Reply not found' });
-    }
+//     const replyIndex = post.replies.findIndex((reply) => reply._id.toString() === replyId);
+//     if (replyIndex === -1) {
+//         return res.status(404).json({ message: 'Reply not found' });
+//     }
 
-    const reply = post.replies[replyIndex];
-    if (!reply || reply.userId.toString() !== userId.toString()) {
-        return res.status(403).json({ message: 'Unauthorized to delete this reply' });
-    }
+//     const reply = post.replies[replyIndex];
+//     if (!reply || reply.userId.toString() !== userId.toString()) {
+//         return res.status(403).json({ message: 'Unauthorized to delete this reply' });
+//     }
 
-    post.replies.splice(replyIndex, 1); //Delete position replyIndex with 1 element
-    await post.save();
+//     post.replies.splice(replyIndex, 1); //Delete position replyIndex with 1 element
+//     await post.save();
 
-    return res.status(200).json({
-        success: true,
-        message: 'Reply deleted successfully',
-        post: post,
-    });
-});
+//     return res.status(200).json({
+//         success: true,
+//         message: 'Reply deleted successfully',
+//         post: post,
+//     });
+// });
+
 const savePost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
     const { _id } = req.user;
@@ -332,11 +354,11 @@ module.exports = {
     updatePost,
     deletePost,
     likePost,
-    replyPost,
+    // replyPost,
     savePost,
     repostPost,
-    updateReplyPost,
-    deleteReplyPost,
+    // updateReplyPost,
+    // deleteReplyPost,
     getFollowingPosts,
     getUserPosts,
 };
