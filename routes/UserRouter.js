@@ -13,6 +13,7 @@ router.put('/updateInfoFromUser', [verifyAccessToken], UserController.updateInfo
 router.get('/getAllUsers', [verifyAccessToken, checkIsAdmin], UserController.getAllUsers);
 router.post('/createUserFromAdmin', [verifyAccessToken, checkIsAdmin], UserController.createUserFromAdmin);
 router.get('/liked/:userId', [verifyAccessToken], UserController.getLikedPosts);
+router.get('/saved/:userId', [verifyAccessToken], UserController.getSavedPosts);
 
 router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
 

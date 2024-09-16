@@ -131,9 +131,13 @@ const likePost = asyncHandler(async (req, res) => {
             },
             { new: true },
         );
-        await User.findByIdAndUpdate(userId, {
-            $pull: { liked: postId },
-        });
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $pull: { liked: postId },
+            },
+            { new: true },
+        );
 
         return res.status(200).json({
             success: response ? true : false,
@@ -148,9 +152,13 @@ const likePost = asyncHandler(async (req, res) => {
             },
             { new: true },
         );
-        await User.findByIdAndUpdate(userId, {
-            $push: { liked: postId },
-        });
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $push: { liked: postId },
+            },
+            { new: true },
+        );
         return res.status(200).json({
             success: response ? true : false,
             message: response ? 'Liked post successfully' : 'Liked post failed',
@@ -252,20 +260,24 @@ const likePost = asyncHandler(async (req, res) => {
 
 const savePost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
-    const { _id } = req.user;
+    // const { _id } = req.user;
+    const userId = req.user._id;
 
     const post = await Post.findById(postId);
     if (!post) throw new Error('Post not found');
-    const userLikedPost = post.savedLists.includes(_id);
+    const userSavedPost = post.savedLists.includes(userId);
 
-    if (userLikedPost) {
+    if (userSavedPost) {
         const response = await Post.findByIdAndUpdate(
             postId,
             {
-                $pull: { savedLists: _id },
+                $pull: { savedLists: userId },
             },
             { new: true },
         );
+        await User.findByIdAndUpdate(userId, {
+            $pull: { saved: postId },
+        });
         return res.status(200).json({
             success: response ? true : false,
             message: response ? 'Unsaved post successfully' : 'Unsaved post failed',
@@ -275,10 +287,13 @@ const savePost = asyncHandler(async (req, res) => {
         const response = await Post.findByIdAndUpdate(
             postId,
             {
-                $push: { savedLists: _id },
+                $push: { savedLists: userId },
             },
             { new: true },
         );
+        await User.findByIdAndUpdate(userId, {
+            $push: { saved: postId },
+        });
         return res.status(200).json({
             success: response ? true : false,
             message: response ? 'Saved post successfully' : 'Saved post failed',
@@ -310,7 +325,7 @@ const repostPost = asyncHandler(async (req, res) => {
 });
 
 const getFollowingPosts = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
+    const { userId } = req.user;
     const user = await User.findById(_id);
     if (!user) throw new Error('User not found');
 

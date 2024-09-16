@@ -382,7 +382,30 @@ const getLikedPosts = async (req, res) => {
             path: 'liked',
             populate: {
                 path: 'postedBy',
-                select: '-password -role -isAdmin -refreshToken',
+                select: '-password -role -isAdmin -refreshToken -liked',
+            },
+        })
+        .select('-password');
+
+    if (!user) {
+        return res.status(404).json({ message: 'User not found!' });
+    }
+
+    return res.status(200).json({
+        success: user ? true : false,
+        user: user ? user : 'Get liked posts by user failed',
+    });
+};
+
+const getSavedPosts = async (req, res) => {
+    const userById = req.params.userId;
+
+    const user = await User.findById(userById)
+        .populate({
+            path: 'saved',
+            populate: {
+                path: 'postedBy',
+                select: '-password -role -isAdmin -refreshToken -saved',
             },
         })
         .select('-password');
@@ -414,4 +437,5 @@ module.exports = {
     createUserFromAdmin,
     getUserProfile,
     getLikedPosts,
+    getSavedPosts,
 };
