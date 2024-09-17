@@ -64,7 +64,7 @@ const UserSchema = new mongoose.Schema(
                 ref: 'Post',
             },
         ],
-        isBlocked: {
+        isLocked: {
             type: Boolean,
             default: false,
         },

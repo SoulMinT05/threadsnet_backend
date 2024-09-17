@@ -36,7 +36,7 @@ const login = asyncHandler(async (req, res, next) => {
         });
     }
     const user = await User.findOne({ email });
-    if (user.isBlocked) throw new Error(`User with email ${user.email} is blocked`);
+    if (user.isLocked) throw new Error(`User with email ${user.email} is locked`);
 
     if (user && (await user.isCorrectPassword(password))) {
         const { password, isAdmin, role, refreshToken, ...userData } = user._doc;
@@ -65,20 +65,20 @@ const login = asyncHandler(async (req, res, next) => {
     }
 });
 
-const blockUser = asyncHandler(async (req, res) => {
+const lockedUser = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-    const { block } = req.body;
+    const { lock } = req.body;
 
-    if (!block) throw new Error('You must select a block true or false');
+    if (!lock) throw new Error('You must select a lock true or false');
 
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found!');
 
-    user.isBlocked = block;
+    user.isLocked = lock;
     await user.save();
     return res.status(200).json({
-        success: user.isBlocked ? true : false,
-        message: user.isBlocked ? 'Block user successfully' : 'Unblock user successfully',
+        success: user.isLocked ? true : false,
+        message: user.isLocked ? 'Lock user successfully' : 'Unlock user successfully',
         user,
     });
 });
@@ -374,7 +374,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     });
 });
 
-const getLikedPosts = async (req, res) => {
+const getLikedPosts = asyncHandler(async (req, res) => {
     const userById = req.params.userId;
 
     const user = await User.findById(userById)
@@ -395,9 +395,9 @@ const getLikedPosts = async (req, res) => {
         success: user ? true : false,
         user: user ? user : 'Get liked posts by user failed',
     });
-};
+});
 
-const getSavedPosts = async (req, res) => {
+const getSavedPosts = asyncHandler(async (req, res) => {
     const userById = req.params.userId;
 
     const user = await User.findById(userById)
@@ -418,12 +418,78 @@ const getSavedPosts = async (req, res) => {
         success: user ? true : false,
         user: user ? user : 'Get liked posts by user failed',
     });
-};
+});
+
+const blockedUser = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const userIdToken = req.user._id;
+
+    if (userId === userIdToken) throw new Error('You cannot block yourself');
+
+    const userToBlock = await User.findById(userId);
+    const loggedInUser = await User.findById(userIdToken);
+    if (!userToBlock || !loggedInUser) throw new Error('User not found');
+
+    const userIsBlocked = loggedInUser.blockedList.includes(userId);
+
+    if (userIsBlocked) {
+        const response = await User.findByIdAndUpdate(
+            userIdToken,
+            {
+                $pull: { blockedList: userId },
+            },
+            { new: true },
+        ).populate('blockedList', '-password -refreshToken -role -isAdmin -isBlocked');
+
+        loggedInUser.blockedList = loggedInUser.blockedList.filter((id) => id.toString() !== userId);
+        await loggedInUser.save();
+
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Unblock user successfully' : 'Unblock user failed',
+            response: response ? response : 'Unblock user failed',
+        });
+    } else {
+        const response = await User.findByIdAndUpdate(
+            userIdToken,
+            {
+                $push: { blockedList: userId },
+            },
+            { new: true },
+        ).populate('blockedList', '-password -refreshToken -role -isAdmin -isBlocked');
+        loggedInUser.following = loggedInUser.following.filter((id) => id.toString() !== userId);
+        userToBlock.followers = userToBlock.followers.filter((id) => id.toString() !== userIdToken.toString());
+        await loggedInUser.save();
+        await userToBlock.save();
+
+        return res.status(200).json({
+            success: response ? true : false,
+            message: response ? 'Blocked user successfully' : 'Blocked user failed',
+            response: response ? response : 'Blocked user failed',
+        });
+    }
+});
+
+const getBlockedListUsers = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate(
+        'blockedList',
+        '-password -refreshToken -role -isAdmin -isBlocked',
+    );
+    if (!user) throw new Error('User not found');
+
+    // const { blockedList, ...data } = user;
+    return res.status(200).json({
+        success: user.blockedList.length > 0 ? true : false,
+        message: user.blockedList.length > 0 ? 'Get blocked user list successfully' : 'Get blocked user list failed',
+        blockedList: user.blockedList.length > 0 ? user.blockedList : [],
+    });
+});
 
 module.exports = {
     register,
     login,
-    blockUser,
+    lockedUser,
     getDetailUser,
     refreshCreateNewAccessToken,
     forgotPassword,
@@ -438,4 +504,6 @@ module.exports = {
     getUserProfile,
     getLikedPosts,
     getSavedPosts,
+    blockedUser,
+    getBlockedListUsers,
 };

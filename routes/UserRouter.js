@@ -15,11 +15,15 @@ router.post('/createUserFromAdmin', [verifyAccessToken, checkIsAdmin], UserContr
 router.get('/liked/:userId', [verifyAccessToken], UserController.getLikedPosts);
 router.get('/saved/:userId', [verifyAccessToken], UserController.getSavedPosts);
 
-router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
-
-router.put('/block/:userId', [verifyAccessToken, checkIsAdmin], UserController.blockUser);
+// User blocked any users
+router.put('/blocked/:userId', [verifyAccessToken], UserController.blockedUser);
+router.get('/getBlockedListUsers/:userId', [verifyAccessToken], UserController.getBlockedListUsers);
+// Admin locked account
+router.put('/locked/:userId', [verifyAccessToken, checkIsAdmin], UserController.lockedUser);
 router.get('/profile/:query', UserController.getUserProfile);
 router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
+
+router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);
 
 module.exports = router;
