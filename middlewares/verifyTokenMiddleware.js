@@ -1,8 +1,15 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
+const User = require('../models/UserModel');
 
 const verifyAccessToken = asyncHandler(async (req, res, next) => {
     const token = req.headers.authorization;
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: 'No authorization token provided',
+        });
+    }
     if (req?.headers?.authorization.startsWith('Bearer')) {
         const accessToken = token.split(' ')[1];
         jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN_SECRET, (err, user) => {
@@ -61,4 +68,18 @@ const checkAdminOrStaff = (req, res, next) => {
     });
 };
 
-module.exports = { verifyAccessToken, checkIsStaff, checkIsAdmin, checkAdminOrStaff };
+const checkBlockedUser = asyncHandler(async (req, res, next) => {
+    const userId = req.params.query; //user in params
+    const loggedInUser = await User.findById(req.user._id); //user logged in
+
+    if (loggedInUser.blockedList.includes(userId)) {
+        return res.status(403).json({
+            success: false,
+            message: 'You cannot access this user profile as they are blocked.',
+        });
+    }
+
+    next();
+});
+
+module.exports = { verifyAccessToken, checkIsStaff, checkIsAdmin, checkAdminOrStaff, checkBlockedUser };

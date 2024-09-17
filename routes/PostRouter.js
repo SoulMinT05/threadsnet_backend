@@ -9,7 +9,7 @@ router.put('/reposted/:postId', verifyAccessToken, PostController.repostPost);
 router.get('/user/:username', PostController.getUserPosts);
 
 router.post('/createPost', verifyAccessToken, PostController.createPost);
-router.get('/getAllPosts', PostController.getAllPosts);
+router.get('/getAllPosts', verifyAccessToken, PostController.getAllPosts);
 router.get('/following', verifyAccessToken, PostController.getFollowingPosts);
 
 router.get('/:postId', PostController.getDetailPost);

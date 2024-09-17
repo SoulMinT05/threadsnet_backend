@@ -62,7 +62,20 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
 });
 
 const getAllPosts = asyncHandler(async (req, res, next) => {
-    const posts = await Post.find()
+    const userIdToken = req.user._id;
+
+    // Lấy danh sách các tài khoản bị chặn của người dùng hiện tại
+    const loggedInUser = await User.findById(userIdToken);
+    if (!loggedInUser) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found',
+        });
+    }
+    const blockedList = loggedInUser.blockedList;
+
+    // Tìm tất cả các bài viết mà không phải của những người bị chặn
+    const posts = await Post.find({ postedBy: { $nin: blockedList } })
         .sort({ createdAt: -1 })
         .populate({
             path: 'comments',
@@ -260,7 +273,6 @@ const likePost = asyncHandler(async (req, res) => {
 
 const savePost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
-    // const { _id } = req.user;
     const userId = req.user._id;
 
     const post = await Post.findById(postId);
@@ -336,19 +348,6 @@ const getFollowingPosts = asyncHandler(async (req, res) => {
         followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
     });
 });
-
-// const getLikedPosts = asyncHandler(async (req, res) => {
-//     const { _id } = req.user;
-//     const user = await User.findById(_id);
-//     if (!user) throw new Error('User not found');
-
-//     const isFollowing = user.following;
-//     const followingPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
-//     res.status(200).json({
-//         success: followingPosts ? true : false,
-//         followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
-//     });
-// });
 
 const getUserPosts = async (req, res) => {
     const { username } = req.params;
