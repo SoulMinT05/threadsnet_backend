@@ -13,9 +13,7 @@ const addFriendRequest = asyncHandler(async (req, res) => {
             { requester: recipientId, recipient: requesterId },
         ],
     });
-    if (existingFriendship) {
-        return res.status(400).json({ message: 'Friend request already exists or you are already friends.' });
-    }
+    if (existingFriendship) throw new Error('Friend request already exists or you are already friends.');
 
     const newFriendship = await Friend.create({
         requester: requesterId,
@@ -23,13 +21,21 @@ const addFriendRequest = asyncHandler(async (req, res) => {
         status: 'pending',
     });
 
-    await User.findByIdAndUpdate(requesterId, {
-        $push: { friends: newFriendship._id },
-    });
+    await User.findByIdAndUpdate(
+        requesterId,
+        {
+            $push: { friends: newFriendship._id },
+        },
+        { new: true },
+    );
 
-    await User.findByIdAndUpdate(recipientId, {
-        $push: { friends: newFriendship._id },
-    });
+    await User.findByIdAndUpdate(
+        recipientId,
+        {
+            $push: { friends: newFriendship._id },
+        },
+        { new: true },
+    );
 
     const populatedFriendship = await Friend.findById(newFriendship._id)
         .populate('requester', 'name username avatar')
@@ -58,10 +64,9 @@ const addFriendRequest = asyncHandler(async (req, res) => {
 });
 
 const acceptFriendRequest = asyncHandler(async (req, res) => {
-    const { requestId } = req.params; // ID của lời mời kết bạn (FriendModel)
-    const userId = req.user._id; // ID của người dùng hiện tại (người nhận yêu cầu)
+    const { requestId } = req.params;
+    const userId = req.user._id;
 
-    // Tìm lời mời kết bạn và kiểm tra trạng thái
     const friendRequest = await Friend.findOne({
         _id: requestId,
         recipient: userId,
@@ -71,10 +76,8 @@ const acceptFriendRequest = asyncHandler(async (req, res) => {
     if (!friendRequest) {
         return res.status(404).json({ message: 'Friend request not found or already accepted/rejected' });
     }
-
     friendRequest.status = 'accepted';
     await friendRequest.save();
-    console.log('friendRequest: ', friendRequest);
 
     res.status(200).json({
         success: friendRequest ? true : false,
@@ -83,7 +86,31 @@ const acceptFriendRequest = asyncHandler(async (req, res) => {
     });
 });
 
+const rejectFriendRequest = asyncHandler(async (req, res) => {
+    const { requestId } = req.params;
+    const userId = req.user._id;
+
+    const friendRequest = await Friend.findOne({
+        _id: requestId,
+        recipient: userId,
+        status: 'pending',
+    });
+
+    if (!friendRequest) {
+        return res.status(404).json({ message: 'Friend request not found or already accepted/rejected' });
+    }
+    friendRequest.status = 'rejected';
+    await friendRequest.save();
+
+    res.status(200).json({
+        success: friendRequest ? true : false,
+        message: friendRequest ? 'Reject friend successfully' : 'Reject friend failed',
+        friendRequest,
+    });
+});
+
 module.exports = {
     addFriendRequest,
     acceptFriendRequest,
+    rejectFriendRequest,
 };
