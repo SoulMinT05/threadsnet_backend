@@ -30,6 +30,7 @@ router.get('/profile/:query', UserController.getUserProfile);
 router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
 
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);
+router.post('/changePassword', [verifyAccessToken], UserController.changePassword);
 router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
 
 module.exports = router;

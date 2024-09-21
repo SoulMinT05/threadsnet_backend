@@ -131,6 +131,39 @@ const logout = asyncHandler(async (req, res) => {
     });
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Check the current password
+    const isMatchPassword = await user.isCorrectPassword(currentPassword);
+    if (!isMatchPassword) {
+        return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+            password: hashedPassword,
+            passwordChangedAt: Date.now(),
+        },
+        { new: true },
+    );
+
+    return res.status(200).json({
+        success: true,
+        message: 'Password changed successfully',
+        user: updatedUser,
+    });
+});
+
 // Client send mail
 // Server check mail is valid? => send mail + with link (password change token)
 // Client check mail => click link
@@ -514,6 +547,7 @@ module.exports = {
     lockedUser,
     getDetailUser,
     refreshCreateNewAccessToken,
+    changePassword,
     forgotPassword,
     resetPassword,
     logout,
