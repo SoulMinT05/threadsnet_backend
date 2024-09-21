@@ -11,7 +11,9 @@ router.get('/user/:username', verifyAccessToken, PostController.getUserPosts);
 router.post('/createPost', verifyAccessToken, PostController.createPost);
 router.get('/getPostsByVisibility', verifyAccessToken, PostController.getPostsByVisibility);
 router.get('/getAllPosts', verifyAccessToken, PostController.getAllPosts);
+router.get('/public', PostController.getPublicPosts);
 router.get('/following', verifyAccessToken, PostController.getFollowingPosts);
+router.get('/friends', verifyAccessToken, PostController.getFriendPosts);
 
 router.get('/:postId', PostController.getDetailPost);
 router.put('/:postId', verifyAccessToken, PostController.updatePost);

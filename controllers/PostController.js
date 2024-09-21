@@ -278,19 +278,6 @@ const repostPost = asyncHandler(async (req, res) => {
     });
 });
 
-const getFollowingPosts = asyncHandler(async (req, res) => {
-    const { userId } = req.user;
-    const user = await User.findById(_id);
-    if (!user) throw new Error('User not found');
-
-    const isFollowing = user.following;
-    const followingPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
-    res.status(200).json({
-        success: followingPosts ? true : false,
-        followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
-    });
-});
-
 const getUserPosts = async (req, res) => {
     const { username } = req.params;
     const userId = req.user._id;
@@ -333,6 +320,57 @@ const getUserPosts = async (req, res) => {
     });
 };
 
+const getPublicPosts = asyncHandler(async (req, res) => {
+    const publicPosts = await Post.find({ visibility: 'public' }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+        success: true,
+        publicPosts: publicPosts.length > 0 ? publicPosts : 'No public posts available',
+    });
+});
+
+const getFollowingPosts = asyncHandler(async (req, res) => {
+    const { userId } = req.user;
+    const user = await User.findById(_id);
+    if (!user) throw new Error('User not found');
+
+    const isFollowing = user.following;
+    const followingPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
+    res.status(200).json({
+        success: followingPosts ? true : false,
+        followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
+    });
+});
+
+const getFriendPosts = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    // Get lists friends
+    const friends = await Friend.find({
+        $or: [
+            { requester: userId, status: 'accepted' },
+            { recipient: userId, status: 'accepted' },
+        ],
+    });
+
+    const friendIds = friends.map((friend) =>
+        friend.requester.toString() === userId.toString() ? friend.recipient : friend.requester,
+    );
+
+    // Get lists posts of myself
+    friendIds.push(userId);
+
+    const friendPosts = await Post.find({
+        postedBy: { $in: friendIds },
+        visibility: 'friends',
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+        success: true,
+        friendPosts: friendPosts.length > 0 ? friendPosts : 'No friend posts available',
+    });
+});
+
 module.exports = {
     createPost,
     getPostsByVisibility,
@@ -346,6 +384,8 @@ module.exports = {
     repostPost,
     // updateReplyPost,
     // deleteReplyPost,
-    getFollowingPosts,
     getUserPosts,
+    getPublicPosts,
+    getFollowingPosts,
+    getFriendPosts,
 };
