@@ -6,9 +6,10 @@ router.put('/liked/:postId', verifyAccessToken, PostController.likePost);
 router.put('/saved/:postId', verifyAccessToken, PostController.savePost);
 router.put('/reposted/:postId', verifyAccessToken, PostController.repostPost);
 
-router.get('/user/:username', PostController.getUserPosts);
+router.get('/user/:username', verifyAccessToken, PostController.getUserPosts);
 
 router.post('/createPost', verifyAccessToken, PostController.createPost);
+router.get('/getPostsByVisibility', verifyAccessToken, PostController.getPostsByVisibility);
 router.get('/getAllPosts', verifyAccessToken, PostController.getAllPosts);
 router.get('/following', verifyAccessToken, PostController.getFollowingPosts);
 

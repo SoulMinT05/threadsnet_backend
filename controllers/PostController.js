@@ -1,5 +1,6 @@
 const Post = require('../models/PostModel');
 const User = require('../models/UserModel');
+const Friend = require('../models/FriendModel');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
@@ -33,6 +34,38 @@ const createPost = asyncHandler(async (req, res) => {
         success: newPost ? true : false,
         message: newPost ? 'Created post successfully' : 'Failed to create post',
         newPost,
+    });
+});
+
+const getPostsByVisibility = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    const currentUser = await User.findById(userId).populate('followers').populate('friends');
+
+    const acceptedFriends = currentUser.friends.filter((friend) => friend.status === 'accepted');
+
+    const friendIds = acceptedFriends.map((friend) =>
+        friend.requester.toString() === userId ? friend.recipient : friend.requester,
+    );
+    const posts = await Post.find({
+        $or: [
+            { visibility: 'public' },
+            {
+                visibility: 'friends',
+                postedBy: { $in: friendIds },
+            },
+            {
+                visibility: 'followers',
+                postedBy: { $in: currentUser.followers.map((follower) => follower._id) },
+            },
+            { visibility: 'private', postedBy: userId },
+            { postedBy: userId },
+        ],
+    })
+        .populate('postedBy', 'name username avatar')
+        .sort({ createdAt: -1 });
+    return res.status(200).json({
+        posts,
     });
 });
 
@@ -180,97 +213,6 @@ const likePost = asyncHandler(async (req, res) => {
     }
 });
 
-// const replyPost = asyncHandler(async (req, res) => {
-//     const { postId } = req.params;
-//     const { textComment } = req.body;
-//     const userId = req.user._id;
-//     const user = await User.findById(userId);
-
-//     const avatar = user.avatar;
-//     const username = user.username;
-//     const createdAt = new Date();
-//     const updatedAt = new Date();
-
-//     if (!textComment) throw new Error('Text comment field is required');
-
-//     const post = await Post.findById(postId);
-//     if (!post) throw new Error('Post not found');
-
-//     const replyId = new mongoose.Types.ObjectId();
-//     const reply = {
-//         _id: replyId,
-//         userId,
-//         textComment,
-//         avatar,
-//         username,
-//         createdAt,
-//         updatedAt,
-//     };
-
-//     post.replies.push(reply);
-//     await post.save();
-
-//     return res.status(200).json({
-//         success: reply ? true : false,
-//         reply: reply ? reply : 'Reply post failed',
-//     });
-// });
-
-// const updateReplyPost = asyncHandler(async (req, res) => {
-//     const { postId, replyId } = req.params;
-//     const { textComment } = req.body;
-//     const userId = req.user._id;
-
-//     if (!textComment) throw new Error('Text comment field is required');
-
-//     const post = await Post.findById(postId);
-//     if (!post) throw new Error('Post not found');
-
-//     const replyIndex = post.replies.findIndex((reply) => reply._id.toString() === replyId);
-//     if (replyIndex === -1) throw new Error('Reply not found');
-
-//     const reply = post.replies[replyIndex];
-//     console.log('reply :', reply);
-//     if (!reply || reply.userId.toString() !== userId.toString()) {
-//         return res.status(403).json({ message: 'Unauthorized to edit this reply' });
-//     }
-
-//     post.replies[replyIndex].textComment = textComment;
-//     await post.save();
-//     return res.status(200).json({
-//         success: true,
-//         message: 'Reply updated successfully',
-//         post: post,
-//     });
-// });
-
-// const deleteReplyPost = asyncHandler(async (req, res) => {
-//     const { postId, replyId } = req.params;
-//     const userId = req.user._id;
-
-//     const post = await Post.findById(postId);
-//     if (!post) throw new Error('Post not found');
-
-//     const replyIndex = post.replies.findIndex((reply) => reply._id.toString() === replyId);
-//     if (replyIndex === -1) {
-//         return res.status(404).json({ message: 'Reply not found' });
-//     }
-
-//     const reply = post.replies[replyIndex];
-//     if (!reply || reply.userId.toString() !== userId.toString()) {
-//         return res.status(403).json({ message: 'Unauthorized to delete this reply' });
-//     }
-
-//     post.replies.splice(replyIndex, 1); //Delete position replyIndex with 1 element
-//     await post.save();
-
-//     return res.status(200).json({
-//         success: true,
-//         message: 'Reply deleted successfully',
-//         post: post,
-//     });
-// });
-
 const savePost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
     const userId = req.user._id;
@@ -351,10 +293,40 @@ const getFollowingPosts = asyncHandler(async (req, res) => {
 
 const getUserPosts = async (req, res) => {
     const { username } = req.params;
+    const userId = req.user._id;
     const user = await User.findOne({ username });
     if (!user) throw new Error('User not found');
 
-    const posts = await Post.find({ postedBy: user._id }).sort({ createdAt: -1 });
+    let posts;
+
+    // If postedBy of post equal :username
+    if (user._id.toString() === userId.toString()) {
+        // Trả về tất cả bài viết
+        posts = await Post.find({ postedBy: user._id }).sort({ createdAt: -1 });
+    } else {
+        // Nếu không phải người dùng hiện tại, chỉ trả về các bài viết công khai, bạn bè hoặc người theo dõi
+        const currentUser = await User.findById(userId);
+
+        const friends = await Friend.find({
+            $or: [
+                { requester: userId, recipient: user._id, status: 'accepted' },
+                { requester: user._id, recipient: userId, status: 'accepted' },
+            ],
+        });
+
+        const isFriend = friends.length > 0;
+        const isFollower = currentUser.following.includes(user._id);
+
+        // Lọc bài viết dựa trên quyền truy cập
+        posts = await Post.find({
+            postedBy: user._id,
+            $or: [
+                { visibility: 'public' },
+                { visibility: 'friends', postedBy: isFriend ? user._id : null },
+                { visibility: 'followers', postedBy: isFollower ? user._id : null },
+            ],
+        }).sort({ createdAt: -1 });
+    }
     res.status(200).json({
         success: posts ? true : false,
         posts: posts ? posts : 'Get user posts failed',
@@ -363,6 +335,7 @@ const getUserPosts = async (req, res) => {
 
 module.exports = {
     createPost,
+    getPostsByVisibility,
     getDetailPost,
     getAllPosts,
     updatePost,
