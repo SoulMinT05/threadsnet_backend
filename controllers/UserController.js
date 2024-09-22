@@ -14,12 +14,21 @@ const cloudinary = require('cloudinary').v2;
 const register = asyncHandler(async (req, res, next) => {
     const { name, email, username, password } = req.body;
     if (!name || !email || !username || !password) throw new Error('Missing input register');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) throw new Error('Invalid email format');
+
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password))
+        throw new Error(
+            'Password must be at least 8 characters long, contain one letter, one number, and one special character',
+        );
+
     const user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {
         throw new Error(`User with username ${username} and email ${email} has already existed`);
     } else {
         const newUser = await User.create(req.body);
-        console.log('newUser: ', newUser);
         return res.status(200).json({
             success: newUser ? true : false,
             newUser: newUser ? newUser : 'Register account failed',
