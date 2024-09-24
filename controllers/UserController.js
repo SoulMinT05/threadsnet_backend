@@ -180,7 +180,7 @@ const changePassword = asyncHandler(async (req, res) => {
 // Check token is same with token of server send mail?
 // Change password
 const forgotPassword = asyncHandler(async (req, res) => {
-    const { email } = req.query;
+    const { email } = req.body;
     if (!email) throw new Error('Email not found');
     const user = await User.findOne({ email });
     if (!user) throw new Error('User not found');
@@ -190,7 +190,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     const html = `
         Vui lòng nhấp vào link dưới đây để thay đổi mật khẩu của bạn. 
-        Link này sẽ hết hạn sau 5 phút kể từ bây giờ. <a href=${process.env.URI_SERVER}/api/user/resetPassword/${resetToken}>Nhấp vào đây</a>
+        Link này sẽ hết hạn sau 5 phút kể từ bây giờ. <a href=${process.env.URI_CLIENT}/resetPassword/${resetToken}>Nhấp vào đây</a>
     `;
 
     const data = {
@@ -199,8 +199,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
     };
     const infoMailUser = await sendMail(data);
     return res.status(200).json({
-        success: true,
-        infoMailUser,
+        success: infoMailUser?.response?.includes('OK') ? true : false,
+        message: infoMailUser?.response?.includes('OK') ? 'Check mail to do a next step' : 'Error, please try again',
     });
 });
 
@@ -210,7 +210,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     const passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
     // gt: higher than, lt: lower than
     const user = await User.findOne({ passwordResetToken, passwordResetExpires: { $gt: Date.now() } });
-    if (!user) throw new Error('Invalid reset token');
+    if (!user) throw new Error('Invalid reset token. Please try again forgot password');
     user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
@@ -218,7 +218,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     await user.save();
     return res.status(200).json({
         success: user ? true : false,
-        message: user ? 'Updated password successfully' : 'Failed update password',
+        message: user ? 'Reset password successfully. Please login your account' : 'Failed update password',
     });
 });
 
