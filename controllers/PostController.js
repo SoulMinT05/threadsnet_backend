@@ -69,6 +69,42 @@ const getPostsByVisibility = asyncHandler(async (req, res) => {
     });
 });
 
+const updateVisibilityPost = asyncHandler(async (req, res) => {
+    const { postId } = req.params;
+    const { visibility } = req.body;
+
+    // Kiểm tra xem postId và visibility có được cung cấp hay không
+    if (!postId || !visibility) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing postId or visibility',
+        });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+        return res.status(404).json({
+            success: false,
+            message: 'Post not found',
+        });
+    }
+
+    if (post.postedBy.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'Unauthorized to update this post',
+        });
+    }
+
+    post.visibility = visibility;
+    await post.save();
+    return res.status(200).json({
+        success: true,
+        message: 'Visibility updated successfully',
+        post,
+    });
+});
+
 const getDetailPost = asyncHandler(async (req, res, next) => {
     const { postId } = req.params;
     if (!postId) throw new Error('Post not found');
@@ -374,6 +410,7 @@ const getFriendPosts = asyncHandler(async (req, res) => {
 module.exports = {
     createPost,
     getPostsByVisibility,
+    updateVisibilityPost,
     getDetailPost,
     getAllPosts,
     updatePost,

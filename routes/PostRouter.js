@@ -5,6 +5,7 @@ const { verifyAccessToken, checkIsStaff, checkIsAdmin } = require('../middleware
 router.put('/liked/:postId', verifyAccessToken, PostController.likePost);
 router.put('/saved/:postId', verifyAccessToken, PostController.savePost);
 router.put('/reposted/:postId', verifyAccessToken, PostController.repostPost);
+router.put('/updateVisibilityPost/:postId', verifyAccessToken, PostController.updateVisibilityPost);
 
 router.get('/user/:username', verifyAccessToken, PostController.getUserPosts);
 
