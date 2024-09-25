@@ -11,6 +11,8 @@ const createComment = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { textComment } = req.body;
 
+    if (!textComment) throw new Error('You need to type comment');
+
     const post = await Post.findById(postId);
     if (!post) throw new Error('Post not found');
 
