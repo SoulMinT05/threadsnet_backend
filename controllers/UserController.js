@@ -420,11 +420,17 @@ const getUserProfile = asyncHandler(async (req, res) => {
 });
 
 const getLikedPosts = asyncHandler(async (req, res) => {
-    const userById = req.params.userId;
+    const userId = req.user._id;
 
-    const user = await User.findById(userById)
+    const user = await User.findById(userId)
         .populate({
             path: 'liked',
+            match: {
+                $or: [
+                    { visibility: { $ne: 'private' } }, // Bài viết không phải là private
+                    { postedBy: userId }, // Hoặc bài viết là của chính người dùng
+                ],
+            },
             populate: {
                 path: 'postedBy',
                 select: '-password -role -isAdmin -refreshToken -liked',
@@ -438,7 +444,7 @@ const getLikedPosts = asyncHandler(async (req, res) => {
 
     return res.status(200).json({
         success: user ? true : false,
-        user: user ? user : 'Get liked posts by user failed',
+        likedPosts: user.liked,
     });
 });
 

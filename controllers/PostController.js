@@ -366,12 +366,16 @@ const getPublicPosts = asyncHandler(async (req, res) => {
 });
 
 const getFollowingPosts = asyncHandler(async (req, res) => {
-    const { userId } = req.user;
-    const user = await User.findById(_id);
+    const userId = req.user._id;
+    const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
 
     const isFollowing = user.following;
-    const followingPosts = await Post.find({ postedBy: { $in: isFollowing } }).sort({ createdAt: -1 });
+    const followingPosts = await Post.find({
+        postedBy: { $in: isFollowing },
+        visibility: { $ne: 'private' }, // Lọc ra những bài có visibility là 'private'
+    }).sort({ createdAt: -1 });
+
     res.status(200).json({
         success: followingPosts ? true : false,
         followingPosts: followingPosts ? followingPosts : 'Get feed posts failed',
