@@ -14,6 +14,8 @@ router.get('/getPostsByVisibility', verifyAccessToken, PostController.getPostsBy
 router.get('/getAllPosts', verifyAccessToken, PostController.getAllPosts);
 router.get('/public', PostController.getPublicPosts);
 router.get('/following', verifyAccessToken, PostController.getFollowingPosts);
+router.get('/liked', verifyAccessToken, PostController.getLikedPosts);
+router.get('/saved', verifyAccessToken, PostController.getSavedPosts);
 router.get('/friends', verifyAccessToken, PostController.getFriendPosts);
 
 router.get('/:postId', PostController.getDetailPost);

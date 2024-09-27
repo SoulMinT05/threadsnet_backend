@@ -382,6 +382,46 @@ const getFollowingPosts = asyncHandler(async (req, res) => {
     });
 });
 
+const getLikedPosts = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    const likedPostIds = user.liked;
+    const likedPosts = await Post.find({
+        _id: { $in: likedPostIds },
+        $or: [
+            { _id: { $in: likedPostIds }, visibility: { $ne: 'private' } },
+            { postedBy: userId }, // Bao gồm bài viết của chính người dùng
+        ],
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+        success: true,
+        likedPosts: likedPosts.length > 0 ? likedPosts : 'No liked posts found',
+    });
+});
+
+const getSavedPosts = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    const savedPostIds = user.saved;
+    const savedPosts = await Post.find({
+        _id: { $in: savedPostIds },
+        $or: [
+            { _id: { $in: savedPostIds }, visibility: { $ne: 'private' } },
+            { postedBy: userId }, // Bao gồm bài viết của chính người dùng
+        ],
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+        success: true,
+        savedPosts: savedPosts.length > 0 ? savedPosts : 'No saved posts found',
+    });
+});
+
 const getFriendPosts = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
@@ -428,5 +468,7 @@ module.exports = {
     getUserPosts,
     getPublicPosts,
     getFollowingPosts,
+    getLikedPosts,
+    getSavedPosts,
     getFriendPosts,
 };
