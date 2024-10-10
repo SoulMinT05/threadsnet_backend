@@ -17,8 +17,8 @@ router.put('/resetPassword', UserController.resetPassword);
 router.put('/updateInfoFromUser', [verifyAccessToken], UserController.updateInfoFromUser);
 router.get('/getAllUsers', [verifyAccessToken, checkIsAdmin], UserController.getAllUsers);
 router.post('/createUserFromAdmin', [verifyAccessToken, checkIsAdmin], UserController.createUserFromAdmin);
-router.get('/liked', [verifyAccessToken], UserController.getLikedPosts);
-router.get('/saved/:userId', [verifyAccessToken], UserController.getSavedPosts);
+// router.get('/liked', [verifyAccessToken], UserController.getLikedPosts);
+// router.get('/saved/:userId', [verifyAccessToken], UserController.getSavedPosts);
 
 // User blocked any users
 router.put('/blocked/:userId', [verifyAccessToken], UserController.blockedUser);
@@ -26,7 +26,7 @@ router.put('/unblocked/:userId', [verifyAccessToken], UserController.unblockedUs
 router.get('/getBlockedListUsers/:userId', [verifyAccessToken], UserController.getBlockedListUsers);
 // Admin locked account
 router.put('/locked/:userId', [verifyAccessToken, checkIsAdmin], UserController.lockedUser);
-router.get('/profile/:query', UserController.getUserProfile);
+router.get('/profile/:query', verifyAccessToken, UserController.getUserProfile);
 router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
 
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);

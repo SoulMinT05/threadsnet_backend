@@ -402,8 +402,10 @@ const createUserFromAdmin = asyncHandler(async (req, res) => {
 });
 
 const getUserProfile = asyncHandler(async (req, res) => {
-    const { query } = req.params;
-    // query is either username or id
+    const { query } = req.params; // query is either username or id
+    const currentUserId = req.user._id;
+
+    const currentUser = await User.findOne({ _id: currentUserId }).select('blockedList');
 
     let user;
     if (mongoose.Types.ObjectId.isValid(query)) {
@@ -413,6 +415,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 
     if (!user) throw new Error(`User ${username} not found`);
+
+    if (currentUser?.blockedList?.includes(user._id.toString()))
+        throw new Error('You cannot access this profile because the user is in your blocked list.');
+
     return res.status(200).json({
         success: user ? true : false,
         user: user ? user : 'Get user profile failed',
