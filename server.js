@@ -23,6 +23,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
+app.use(
+    cors({
+        origin: ['http://localhost:5731', 'http://localhost:3000'], // Add both ports here
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    }),
+);
+
 dbConnect();
 
 route(app);

@@ -45,14 +45,15 @@ const login = asyncHandler(async (req, res, next) => {
         });
     }
     const user = await User.findOne({ email })
-        .populate('blockedList', '-password -refreshToken -role -isAdmin -isBlocked')
-        .populate('liked', '-password -refreshToken -role -isAdmin -isBlocked')
-        .populate('saved', '-password -refreshToken -role -isAdmin -isBlocked');
+        .populate('blockedList', '-password -refreshToken')
+        .populate('liked', '-password -refreshToken')
+        .populate('saved', '-password -refreshToken');
 
     if (user.isLocked) throw new Error(`User with email ${user.email} is locked`);
+    console.log('user.isLocked: ', user.isLocked);
 
     if (user && (await user.isCorrectPassword(password))) {
-        const { password, isAdmin, role, refreshToken, ...userData } = user._doc;
+        const { password, isAdmin, role, refreshToken, isLocked, ...userData } = user._doc;
         // Add accessToken, refreshToken
         const accessToken = generateAccessToken(userData._id, isAdmin, role);
         const newRefreshToken = generateRefreshToken(userData._id);
@@ -71,7 +72,12 @@ const login = asyncHandler(async (req, res, next) => {
             success: true,
             message: 'Login successfully',
             accessToken,
-            userData,
+            userData: {
+                ...userData,
+                isAdmin, // Adding isAdmin back to the userData
+                role,
+                isLocked,
+            },
         });
     } else {
         throw new Error('Error in email and password when logging in!');
@@ -80,18 +86,37 @@ const login = asyncHandler(async (req, res, next) => {
 
 const lockedUser = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-    const { lock } = req.body;
-
-    if (!lock) throw new Error('You must select a lock true or false');
+    const currentUser = req.user;
 
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found!');
 
-    user.isLocked = lock;
+    // Kiểm tra nếu admin cố gắng khóa tài khoản của chính mình
+    if (currentUser._id === userId) {
+        return res.status(403).json({
+            success: false,
+            message: 'Không được khoá/mở khoá chính mình.',
+        });
+    }
+    if (currentUser.role === user.role) {
+        return res.status(403).json({
+            success: false,
+            message: 'Không được khoá/mở khoá người cùng chức vụ.',
+        });
+    }
+
+    if (currentUser.role === 'staff' && user.role === 'admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Nhân viên không được khoá/mở khoá quản lý.',
+        });
+    }
+
+    user.isLocked = !user.isLocked;
     await user.save();
     return res.status(200).json({
-        success: user.isLocked ? true : false,
-        message: user.isLocked ? 'Lock user successfully' : 'Unlock user successfully',
+        success: true,
+        message: user.isLocked ? 'Khoá tài khoản thành công' : 'Mở khoá tài khoản thành công',
         user,
     });
 });
@@ -279,7 +304,7 @@ const followUser = asyncHandler(async (req, res, next) => {
 });
 
 const getAllUsers = asyncHandler(async (req, res) => {
-    const user = await User.find().select('-password -isAdmin -role -refreshToken');
+    const user = await User.find().select('-password -refreshToken');
     return res.status(200).json({
         success: user ? true : false,
         user: user ? user : 'Get all users failed',
@@ -291,10 +316,32 @@ const deleteUser = asyncHandler(async (req, res) => {
     if (!userId) {
         throw new Error('User not found');
     }
+    const currentUser = req.user; // Giả sử thông tin người dùng đang đăng nhập nằm trong req.user
+    if (currentUser.role !== 'admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Bạn không có quyền xoá người dùng',
+        });
+    }
+
+    const deletedUser = await User.findById(userId);
+    if (!deletedUser) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found',
+        });
+    }
+    if (currentUser.role === 'admin' && deletedUser.role === 'admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Bạn không có quyền xoá người cùng chức vụ',
+        });
+    }
+
     const user = await User.findByIdAndDelete(userId);
     return res.status(200).json({
         success: user ? true : false,
-        user: user ? user : 'Delete user failed',
+        message: user ? `Deleted user with ${user.email} successfully` : 'Deleted user failed ',
     });
 });
 
@@ -376,29 +423,101 @@ const updateInfoFromAdmin = asyncHandler(async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         req.body.password = await bcrypt.hash(req.body.password, salt);
     }
-    const user = await User.findByIdAndUpdate(userId, req.body, { new: true }).select(
-        '-password -isAdmin -role -refreshToken',
-    );
+
+    if (req.body.phoneNumber && !/^(09|03|07|08|05)\d{8}$/.test(req.body.phoneNumber)) {
+        return res
+            .status(400)
+            .json({ message: 'Số điện thoại phải có 10 chữ số và bắt đầu bằng 09, 03, 07, 08 hoặc 05.' });
+    }
+
+    const currentUser = req.user;
+    const updatedUser = await User.findById(userId);
+    if (!updatedUser) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found',
+        });
+    }
+
+    if (updatedUser.role === currentUser.role) {
+        return res.status(403).json({
+            success: false,
+            message: 'Không được sửa thông tin người cùng chức vụ',
+        });
+    }
+
+    if (currentUser.role === 'staff' && req.body.role !== 'user') {
+        return res.status(403).json({
+            success: false,
+            message: 'Nhân viên không được phép thay đổi vai trò của người dùng',
+        });
+    }
+
+    if (currentUser.role === 'staff' && updatedUser.role === 'admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Nhân viên không được sửa thông tin quản lý',
+        });
+    }
+
+    if (currentUser.role === 'admin' && req.body.role && !['user', 'staff'].includes(req.body.role)) {
+        return res.status(403).json({
+            success: false,
+            message: 'Quản lý chỉ có thể thay đổi vai trò thành user hoặc staff',
+        });
+    }
+
+    const user = await User.findByIdAndUpdate(userId, req.body, { new: true }).select('-password -refreshToken');
     return res.status(200).json({
         success: user ? true : false,
-        user: user ? user : 'Update info user from admin failed',
+        updatedUser: user ? user : 'Update info user from admin failed',
     });
 });
 
 const createUserFromAdmin = asyncHandler(async (req, res) => {
-    const { name, email, username, password } = req.body;
-    const passwordUser = password || '123';
-    if (!name || !email || !username) throw new Error('Missing input create user from admin');
-    const user = await User.findOne({ $or: [{ email }, { username }] });
+    const { name, username, email, password } = req.body;
+    let { role = 'user' } = req.body;
+
+    const passwordUser = password || '123456';
+    if (!name || !username || !email) throw new Error('Missing input create user from admin');
+    const user = await User.findOne({ username });
     if (user) {
-        throw new Error(`User with username ${username} and email ${email} has already existed`);
-    } else {
-        const newUser = await User.create({ ...req.body, password: passwordUser });
-        return res.status(200).json({
-            success: newUser ? true : false,
-            newUser: newUser ? newUser : 'Create user account from admin failed',
+        throw new Error(`User with ${username} has already existed`);
+    }
+
+    if (req.body.phoneNumber && !/^(09|03|07|08|05)\d{8}$/.test(req.body.phoneNumber)) {
+        return res
+            .status(400)
+            .json({ message: 'Số điện thoại phải có 10 chữ số và bắt đầu bằng 09, 03, 07, 08 hoặc 05.' });
+    }
+
+    const currentUser = req.user;
+    if (currentUser.role === 'staff' && role !== 'user') {
+        return res.status(400).json({
+            success: false,
+            message: 'Nhân viên chỉ được tạo chức vụ người dùng',
         });
     }
+    if (currentUser.role === 'staff') {
+        role = 'user';
+    }
+    if (currentUser.role === 'admin' && role !== 'staff' && role !== 'user') {
+        return res.status(400).json({
+            success: false,
+            message: 'Chức vụ phải là nhân viên hoặc người dùng',
+        });
+    }
+
+    const newUser = await User.create({
+        ...req.body,
+        password: passwordUser,
+        // role: userrole, // Gán role đã xử lý vào người dùng mới
+    });
+
+    return res.status(200).json({
+        success: newUser ? true : false,
+        newUser: newUser ? newUser : 'Create user account from admin failed',
+    });
 });
 
 const getUserProfile = asyncHandler(async (req, res) => {
