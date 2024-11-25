@@ -145,7 +145,7 @@ const refreshCreateNewAccessToken = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
     const cookie = req.cookies;
-    if (!cookie || !cookie.refreshToken) throw new Error('Not found refresh token in cookies');
+    // if (!cookie || !cookie.refreshToken) throw new Error('Not found refresh token in cookies');
     // Delete refreshToken in DB
     await User.findOneAndUpdate(
         { refreshToken: cookie.refreshToken },
@@ -174,14 +174,21 @@ const changePassword = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    if (!newPassword || !currentPassword) {
+        return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại và mật khẩu mới là bắt buộc' });
+    }
+
     // Check the current password
     const isMatchPassword = await user.isCorrectPassword(currentPassword);
     if (!isMatchPassword) {
-        return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không đúng' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword))
+        throw new Error('Mật khẩu phải gồm kí tự in hoa, kí tự thường, số và kí tự đặc biệt');
 
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     const updatedUser = await User.findOneAndUpdate(
         { _id: userId },
         {
@@ -390,7 +397,7 @@ const updateInfoFromUser = asyncHandler(async (req, res) => {
             avatar,
         },
         { new: true },
-    ).select('-password -isAdmin -role -refreshToken');
+    ).select('-password -refreshToken');
 
     const userById = await User.findById(userId);
 
@@ -533,6 +540,8 @@ const getUserProfile = asyncHandler(async (req, res) => {
         user = await User.findOne({ username: query }).select('-password -updatedAt -refreshToken -isAdmin -role');
     }
 
+    // const user = await User.findOne({ username: query }).select('-password -updatedAt -refreshToken -isAdmin -role');
+    console.log('user: ', user);
     if (!user) throw new Error(`User ${username} not found`);
 
     if (currentUser?.blockedList?.includes(user._id.toString()))

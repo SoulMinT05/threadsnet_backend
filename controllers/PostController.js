@@ -130,6 +130,34 @@ const getDetailPost = asyncHandler(async (req, res, next) => {
     return res.status(200).json(post);
 });
 
+const getDetailPostFromAdmin = asyncHandler(async (req, res, next) => {
+    const { postId } = req.params;
+    if (!postId) throw new Error('Post not found');
+
+    const post = await Post.findByIdAndUpdate(
+        postId,
+        {
+            $inc: { numberViews: 1 },
+        },
+        { new: true },
+    )
+        // .populate('postedBy')
+        .populate({
+            path: 'comments',
+            populate: {
+                path: 'userId',
+                select: 'name username email avatar createdAt updatedAt',
+            },
+        });
+    console.log('postDetail: ', post);
+    if (!post) throw new Error('Get detail post failed');
+    // return res.status(200).json({
+    //     success: post ? true : false,
+    //     post: post ? post : 'Get detail post failed',
+    // });
+    return res.status(200).json(post);
+});
+
 const getAllPosts = asyncHandler(async (req, res, next) => {
     const userIdToken = req.user._id;
 
@@ -146,6 +174,36 @@ const getAllPosts = asyncHandler(async (req, res, next) => {
     // Tìm tất cả các bài viết mà không phải của những người bị chặn
     const posts = await Post.find({ postedBy: { $nin: blockedList } })
         .sort({ createdAt: -1 })
+        .populate({
+            path: 'comments',
+            populate: {
+                path: 'userId',
+                select: 'name username email avatar createdAt updatedAt',
+            },
+        });
+    return res.status(200).json({
+        success: posts ? true : false,
+        posts: posts ? posts : 'Get all posts failed',
+    });
+});
+
+const getAllPostsFromAdmin = asyncHandler(async (req, res, next) => {
+    const userIdToken = req.user._id;
+
+    // Lấy danh sách các tài khoản bị chặn của người dùng hiện tại
+    const loggedInUser = await User.findById(userIdToken);
+    if (!loggedInUser) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found',
+        });
+    }
+    const blockedList = loggedInUser.blockedList;
+
+    // Tìm tất cả các bài viết mà không phải của những người bị chặn
+    const posts = await Post.find({ postedBy: { $nin: blockedList } })
+        .sort({ createdAt: -1 })
+        .populate('postedBy')
         .populate({
             path: 'comments',
             populate: {
@@ -456,7 +514,9 @@ module.exports = {
     getPostsByVisibility,
     updateVisibilityPost,
     getDetailPost,
+    getDetailPostFromAdmin,
     getAllPosts,
+    getAllPostsFromAdmin,
     updatePost,
     deletePost,
     likePost,

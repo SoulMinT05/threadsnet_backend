@@ -34,24 +34,24 @@ const PostSchema = new mongoose.Schema(
                 default: [],
             },
         ],
-        // replies: [
-        //     {
-        //         _id: mongoose.Schema.Types.ObjectId,
-        //         userId: {
-        //             type: mongoose.Types.ObjectId,
-        //             ref: 'User',
-        //         },
-        //         textComment: {
-        //             type: String,
-        //         },
-        //         avatar: {
-        //             type: String,
-        //         },
-        //         username: {
-        //             type: String,
-        //         },
-        //     },
-        // ],
+        replies: [
+            {
+                _id: mongoose.Schema.Types.ObjectId,
+                userId: {
+                    type: mongoose.Types.ObjectId,
+                    ref: 'User',
+                },
+                textComment: {
+                    type: String,
+                },
+                avatar: {
+                    type: String,
+                },
+                username: {
+                    type: String,
+                },
+            },
+        ],
         // comments: [CommentSchema],
         comments: [
             {
