@@ -2,6 +2,7 @@ const Message = require('../models/MessageModel');
 const Conversation = require('../models/ConversationModel');
 const asyncHandler = require('express-async-handler');
 const { getRecipientSocketId, io } = require('../socket/socket');
+const cloudinary = require('cloudinary').v2;
 
 const sendMessage = async (req, res, next) => {
     try {
