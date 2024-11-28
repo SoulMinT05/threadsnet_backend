@@ -31,6 +31,7 @@ router.put('/follow/:userId', verifyAccessToken, UserController.followUser);
 
 router.put('/updateInfoFromAdmin/:userId', [verifyAccessToken, checkIsAdmin], UserController.updateInfoFromAdmin);
 router.post('/changePassword', [verifyAccessToken], UserController.changePassword);
+router.get('/getSuggestedUsers', [verifyAccessToken], UserController.getSuggestedUsers);
 router.delete('/:userId', [verifyAccessToken, checkIsAdmin], UserController.deleteUser);
 
 module.exports = router;
