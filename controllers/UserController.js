@@ -50,7 +50,6 @@ const login = asyncHandler(async (req, res, next) => {
         .populate('saved', '-password -refreshToken');
 
     if (user.isLocked) throw new Error(`User with email ${user.email} is locked`);
-    console.log('user.isLocked: ', user.isLocked);
 
     if (user && (await user.isCorrectPassword(password))) {
         const { password, isAdmin, role, refreshToken, isLocked, ...userData } = user._doc;
@@ -541,7 +540,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 
     // const user = await User.findOne({ username: query }).select('-password -updatedAt -refreshToken -isAdmin -role');
-    console.log('user: ', user);
     if (!user) throw new Error(`User ${username} not found`);
 
     if (currentUser?.blockedList?.includes(user._id.toString()))
@@ -677,7 +675,6 @@ const getBlockedListUsers = asyncHandler(async (req, res) => {
     if (!user) throw new Error('User not found');
 
     const { blockedList, ...data } = user;
-    console.log('user: ', user);
     // return res.status(200).json({
     //     success: user.blockedList.length > 0 ? true : false,
     //     message: user.blockedList.length > 0 ? 'Get blocked user list successfully' : 'Get blocked user list failed',

@@ -149,7 +149,6 @@ const getDetailPostFromAdmin = asyncHandler(async (req, res, next) => {
                 select: 'name username email avatar createdAt updatedAt',
             },
         });
-    console.log('postDetail: ', post);
     if (!post) throw new Error('Get detail post failed');
     // return res.status(200).json({
     //     success: post ? true : false,

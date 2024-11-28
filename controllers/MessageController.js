@@ -50,7 +50,7 @@ const sendMessage = async (req, res, next) => {
         //     io.to(recipientSocketId).emit('newMessage', newMessage);
         // }
 
-        res.status(201).json({ success: true, newMessage });
+        res.status(201).json(newMessage);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -91,6 +91,7 @@ const getConversations = async (req, res) => {
                 (participant) => participant._id.toString() !== userId.toString(),
             );
         });
+
         res.status(200).json(conversations);
     } catch (error) {
         res.status(500).json({ error: error.message });

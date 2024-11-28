@@ -1,10 +1,12 @@
 const express = require('express');
-const app = express();
+// const app = express();
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+
+const { app, server } = require('./socket/socket.js');
 
 const dbConnect = require('./config/dbConnect');
 const route = require('./routes/index');
@@ -39,6 +41,6 @@ app.use('/', (req, res) => {
     res.send('Welcome to my Threads!');
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server is running at port ${port} in Threads`);
 });
