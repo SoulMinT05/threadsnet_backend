@@ -1,6 +1,7 @@
 const Message = require('../models/MessageModel');
 const Conversation = require('../models/ConversationModel');
 const asyncHandler = require('express-async-handler');
+const { getRecipientSocketId, io } = require('../socket/socket');
 
 const sendMessage = async (req, res, next) => {
     try {
@@ -45,10 +46,10 @@ const sendMessage = async (req, res, next) => {
             }),
         ]);
 
-        // const recipientSocketId = getRecipientSocketId(recipientId);
-        // if (recipientSocketId) {
-        //     io.to(recipientSocketId).emit('newMessage', newMessage);
-        // }
+        const recipientSocketId = getRecipientSocketId(recipientId);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('newMessage', newMessage);
+        }
 
         res.status(201).json(newMessage);
     } catch (error) {

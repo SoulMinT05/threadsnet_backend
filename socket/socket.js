@@ -19,9 +19,9 @@ const io = new Server(server, {
 const userSocketMap = {}; // userId: socketId
 
 // // Function to retrieve recipient's socket ID based on their userId
-// const getRecipientSocketId = (recipientId) => {
-//   return userSocketMap[recipientId];
-// };
+const getRecipientSocketId = (recipientId) => {
+    return userSocketMap[recipientId];
+};
 
 // Event listener for new socket connections
 io.on('connection', (socket) => {
@@ -57,4 +57,4 @@ io.on('connection', (socket) => {
 });
 
 // Export the server, app, and io for use elsewhere
-module.exports = { io, server, app };
+module.exports = { io, server, app, getRecipientSocketId };
