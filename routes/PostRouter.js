@@ -23,5 +23,6 @@ router.get('/:postId', PostController.getDetailPost);
 router.get('/detailPost/:postId', PostController.getDetailPostFromAdmin);
 router.put('/:postId', verifyAccessToken, PostController.updatePost);
 router.delete('/:postId', verifyAccessToken, PostController.deletePost);
+router.delete('/deletePostFromAdmin/:postId', verifyAccessToken, PostController.deletePostFromAdmin);
 
 module.exports = router;

@@ -265,6 +265,28 @@ const deletePost = asyncHandler(async (req, res, next) => {
     });
 });
 
+const deletePostFromAdmin = asyncHandler(async (req, res, next) => {
+    const { postId } = req.params;
+    if (!postId) throw new Error(`Post ${postId} not found`);
+
+    const post = await Post.findById(postId);
+
+    if (post.image) {
+        const imageUrl = post.image; // e.g., 'https://res.cloudinary.com/.../threadsnet/imageName.jpg'
+        const imagePath = imageUrl.split('/').slice(-2).join('/'); // 'threadsnet/imageName.jpg'
+        const imageId = imagePath.split('.')[0]; // 'threadsnet/imageName'
+
+        // Delete the image from Cloudinary
+        await cloudinary.uploader.destroy(imageId);
+    }
+
+    const deletePost = await Post.findByIdAndDelete(postId);
+    return res.status(200).json({
+        success: deletePost ? true : false,
+        deletePost: deletePost ? deletePost : 'Delete post failed',
+    });
+});
+
 const likePost = asyncHandler(async (req, res) => {
     const { postId } = req.params;
     const userId = req.user._id;
@@ -529,6 +551,7 @@ module.exports = {
     getAllPostsFromAdmin,
     updatePost,
     deletePost,
+    deletePostFromAdmin,
     likePost,
     // replyPost,
     savePost,
