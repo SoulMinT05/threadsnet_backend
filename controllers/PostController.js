@@ -1,6 +1,7 @@
 const Post = require('../models/PostModel');
 const User = require('../models/UserModel');
 const Friend = require('../models/FriendModel');
+const SensitiveWord = require('../models/SensitiveWordModel');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
@@ -18,6 +19,15 @@ const createPost = asyncHandler(async (req, res) => {
     const maxLength = 500;
     if (text.length > maxLength) throw new Error(`Text comment should be less than ${maxLength} words`);
 
+    // Danh sách từ nhạy cảm
+    // Lấy danh sách từ nhạy cảm từ database
+    const sensitiveWordsDoc = await SensitiveWord.findOne();
+    const sensitiveWords = sensitiveWordsDoc ? sensitiveWordsDoc.words : [];
+    console.log('sensitiveWords: ', sensitiveWords);
+
+    // Kiểm tra nếu bài viết chứa từ nhạy cảm
+    const containsSensitiveWord = text ? sensitiveWords.some((word) => text.toLowerCase().includes(word)) : false;
+
     if (image) {
         const uploadResponse = await cloudinary.uploader.upload(image, {
             folder: 'threadsnet',
@@ -29,6 +39,7 @@ const createPost = asyncHandler(async (req, res) => {
     const newPost = await Post.create({
         ...req.body,
         image,
+        status: containsSensitiveWord ? 1 : 0,
     });
     return res.status(200).json({
         success: newPost ? true : false,

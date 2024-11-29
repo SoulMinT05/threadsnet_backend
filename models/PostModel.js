@@ -77,6 +77,10 @@ const PostSchema = new mongoose.Schema(
         lastRepostedAt: {
             type: Date,
         },
+        status: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         // _id: false,

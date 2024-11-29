@@ -4,6 +4,7 @@ const commentRouter = require('./CommentRouter');
 const friendRouter = require('./FriendRouter');
 const messageRouter = require('./MessageRouter');
 const conversationRouter = require('./ConversationRouter');
+const sensitiveWordRouter = require('./SensitiveWordRouter');
 
 const { notFound, errorHandler } = require('../middlewares/errorHandlerMiddleware');
 
@@ -14,6 +15,7 @@ const route = (app) => {
     // app.use('/api/conversation', conversationRouter);
     app.use('/api/comment', commentRouter);
     app.use('/api/friend', friendRouter);
+    app.use('/api/sensitiveWord', sensitiveWordRouter);
     app.use(notFound);
     app.use(errorHandler);
 };
